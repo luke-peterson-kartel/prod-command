@@ -284,8 +284,9 @@ const server = http.createServer((req, res) => {
   await loadLookups();
   console.log('[BOOT] Starting initial AirTable poll...');
   await poll().catch(console.error);
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`[BOOT] ✅ PROD Command server running → http://localhost:${PORT}`);
-    console.log(`[BOOT] API: http://localhost:${PORT}/api/board-data`);
+    console.log(`[BOOT] 🌐 Local network → http://172.18.62.28:${PORT}`);
+    console.log(`[BOOT] API: http://172.18.62.28:${PORT}/api/board-data`);
   });
 })();
