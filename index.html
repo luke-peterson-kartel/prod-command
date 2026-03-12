@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KARTEL | PRODUCTION COMMAND</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #070b14;
+    --bg2: #0c1120;
+    --bg3: #111827;
+    --card: #0d1526;
+    --card-hover: #131d30;
+    --accent: #00ff88;
+    --accent2: #00d4ff;
+    --accent-dim: rgba(0,255,136,0.12);
+    --text: #e2eeff;
+    --text2: #7a9bb5;
+    --text3: #4a6a85;
+    --border: rgba(0,255,136,0.15);
+    --on-track: #00ff88;
+    --at-risk: #f59e0b;
+    --overdue: #ef4444;
+    --complete: #00c97a;
+    --col-purple: #818cf8;
+    --col-purple-dim: rgba(129,140,248,0.1);
+    --col-w: 0px; /* deprecated — columns now flex */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 12px;
+  }
+
+  /* ─── HEADER ── */
+  .header {
+    background: linear-gradient(180deg, #0a1020 0%, var(--bg2) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex; align-items: center; gap: 20px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand { display: flex; flex-direction: column; min-width: 220px; }
+  .brand-title { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.12em; white-space: nowrap; }
+  .brand-sub { font-size: 10px; color: var(--text2); letter-spacing: 0.1em; margin-top: 2px; }
+  .header-divider { width: 1px; height: 40px; background: var(--border); flex-shrink: 0; }
+  .closest { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .closest-label { font-size: 9px; color: var(--text3); letter-spacing: 0.15em; text-transform: uppercase; }
+  .closest-items { display: flex; gap: 10px; flex-wrap: wrap; }
+  .closest-item {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.15);
+    border-radius: 4px; padding: 3px 8px;
+  }
+  .closest-rank { font-size: 9px; color: var(--text3); font-weight: 700; }
+  .closest-name { font-size: 10px; color: var(--text); font-weight: 600; }
+  .closest-days { font-size: 10px; font-weight: 700; }
+  .closest-stage { font-size: 9px; color: var(--text2); }
+  .metrics { display: flex; gap: 16px; align-items: center; min-width: 280px; }
+  .metric { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .metric-val { font-size: 18px; font-weight: 700; line-height: 1; }
+  .metric-label { font-size: 8px; color: var(--text3); letter-spacing: 0.1em; text-align: center; }
+  .metric-val.green { color: var(--accent); }
+  .metric-val.cyan { color: var(--accent2); }
+  .metric-val.amber { color: var(--at-risk); }
+  .clock-block { display: flex; flex-direction: column; align-items: flex-end; min-width: 90px; }
+  .clock { font-size: 16px; font-weight: 700; color: var(--accent2); letter-spacing: 0.05em; }
+  .clock-date { font-size: 9px; color: var(--text3); letter-spacing: 0.08em; }
+
+  /* ─── SUBHEADER ── */
+  .subheader {
+    background: var(--bg2); border-bottom: 1px solid rgba(0,255,136,0.08);
+    padding: 5px 20px; display: flex; align-items: center; gap: 14px;
+  }
+  .live-dot {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 9px; color: var(--accent); letter-spacing: 0.12em; font-weight: 700;
+  }
+  .live-dot::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 6px var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .subheader-alert { font-size: 10px; color: var(--text2); }
+  .subheader-alert span { color: var(--at-risk); font-weight: 600; }
+
+  /* ─── MAIN ── */
+  .main { display: flex; height: calc(100vh - 92px - 56px - 138px - 28px); overflow: hidden; }
+
+  /* ─── INFO STRIP ── */
+  .info-strip {
+    background: var(--bg2); border-bottom: 1px solid rgba(0,255,136,0.08);
+    display: flex; align-items: stretch; height: 56px; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .info-block {
+    display: flex; align-items: center; gap: 0;
+    padding: 0 16px; flex: 1; overflow: hidden;
+  }
+  .info-block + .info-block { border-left: 1px solid rgba(0,255,136,0.08); }
+  .info-block-label {
+    font-size: 8px; font-weight: 700; letter-spacing: 0.15em; color: var(--text3);
+    text-transform: uppercase; white-space: nowrap; padding-right: 12px;
+    border-right: 1px solid rgba(255,255,255,0.05); margin-right: 12px;
+    writing-mode: horizontal-tb;
+  }
+  .info-deadlines { display: flex; align-items: center; gap: 8px; overflow-x: auto; flex: 1; }
+  .info-deadlines::-webkit-scrollbar { display: none; }
+  .info-deadline-item {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 4px; padding: 4px 8px;
+  }
+  .info-deadline-name { font-size: 9px; font-weight: 600; color: var(--text); }
+  .info-deadline-badge { font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 2px; }
+  .info-deadline-badge.green { background: rgba(0,255,136,0.12); color: var(--on-track); }
+  .info-deadline-badge.amber { background: rgba(245,158,11,0.15); color: var(--at-risk); }
+  .info-deadline-badge.red { background: rgba(239,68,68,0.15); color: var(--overdue); }
+  .info-handoffs { display: flex; align-items: center; gap: 10px; overflow-x: auto; flex: 1; }
+  .info-handoffs::-webkit-scrollbar { display: none; }
+  .info-handoff-item { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .info-handoff-num { font-size: 9px; font-weight: 700; color: var(--accent2); }
+  .info-handoff-text { font-size: 9px; color: var(--text2); }
+  .info-handoff-flag { color: var(--at-risk); }
+  .board-wrap { flex: 1; overflow: hidden; padding: 12px 12px 0; }
+  .board { display: flex; gap: 8px; height: 100%; width: 100%; }
+
+  /* ─── COLUMN ── */
+  .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; height: calc(100% - 42px); }
+  .col-header {
+    border-top: 3px solid var(--col-purple); background: var(--col-purple-dim);
+    border-radius: 4px 4px 0 0; padding: 8px 10px 6px;
+  }
+  .col-header.complete-col { border-top-color: var(--accent); background: var(--accent-dim); }
+  .col-title { font-size: 10px; font-weight: 700; letter-spacing: 0.15em; color: var(--col-purple); text-transform: uppercase; }
+  .col-header.complete-col .col-title { color: var(--accent); }
+  .col-meta { font-size: 9px; color: var(--text3); margin-top: 2px; }
+  .col-cards {
+    flex: 1; overflow-y: auto;
+    background: rgba(0,0,0,0.2); border: 1px solid rgba(0,255,136,0.07);
+    border-top: none; border-radius: 0 0 4px 4px;
+    padding: 8px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .col-cards::-webkit-scrollbar { width: 3px; }
+  .col-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .col-empty { color: var(--text3); font-size: 10px; text-align: center; padding: 20px 0; letter-spacing: 0.1em; }
+
+  /* ─── CARD ── */
+  .card {
+    background: var(--card); border-radius: 5px;
+    border: 1px solid rgba(0,255,136,0.1); border-left: 3px solid var(--on-track);
+    padding: 9px 10px; cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .card:hover {
+    background: var(--card-hover);
+    box-shadow: 0 0 14px rgba(0,255,136,0.15), 0 2px 10px rgba(0,0,0,0.5);
+    transform: translateY(-1px);
+  }
+  .card.at-risk { border-left-color: var(--at-risk); }
+  .card.at-risk:hover { box-shadow: 0 0 14px rgba(245,158,11,0.2), 0 2px 10px rgba(0,0,0,0.5); }
+  .card.overdue { border-left-color: var(--overdue); }
+  .card.overdue:hover { box-shadow: 0 0 14px rgba(239,68,68,0.2), 0 2px 10px rgba(0,0,0,0.5); }
+  .card.complete-card { border-left-color: var(--complete); opacity: 0.75; }
+  .sla-badge.done { background: rgba(0,201,122,0.15); color: var(--complete); }
+  .card-click-hint {
+    position: absolute; top: 7px; right: 8px;
+    font-size: 8px; color: var(--text3); opacity: 0;
+    transition: opacity 0.15s; letter-spacing: 0.05em;
+  }
+  .card:hover .card-click-hint { opacity: 1; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+  .card-name { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1.3; flex: 1; padding-right: 24px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .sla-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+    padding: 2px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+  }
+  .sla-badge.on-track { background: rgba(0,255,136,0.15); color: var(--on-track); }
+  .sla-badge.at-risk { background: rgba(245,158,11,0.15); color: var(--at-risk); }
+  .sla-badge.overdue { background: rgba(239,68,68,0.15); color: var(--overdue); }
+  .sla-badge.today { background: rgba(245,158,11,0.25); color: var(--at-risk); animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+
+  .card-job { font-size: 8px; color: var(--text3); margin-bottom: 3px; }
+  .card-client { font-size: 8px; color: var(--accent2); margin-bottom: 5px; opacity: 0.8; }
+
+  /* Producer row on card — compact */
+  .card-producer {
+    display: flex; align-items: center; gap: 5px; margin-bottom: 5px;
+  }
+  .producer-label { font-size: 8px; color: var(--text3); letter-spacing: 0.08em; }
+  .avatar-circle {
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px; font-weight: 800; flex-shrink: 0;
+  }
+  .avatar-name { font-size: 9px; color: var(--text2); }
+
+  /* Artist count pill */
+  .artist-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 10px; padding: 2px 7px;
+    font-size: 9px; color: var(--accent2); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .artist-pill:hover { background: rgba(0,212,255,0.15); }
+  .artist-pill-icon { font-size: 10px; }
+
+  .card-status {
+    font-size: 8px; color: var(--text2); line-height: 1.4; margin-bottom: 5px;
+    border-left: 2px solid rgba(255,255,255,0.06); padding-left: 6px;
+  }
+  .card-next { background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.1); border-radius: 3px; padding: 4px 6px; }
+  .card-next-label { font-size: 8px; color: var(--accent); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 2px; }
+  .card-next-text { font-size: 8px; color: var(--text2); line-height: 1.4; }
+  .card.at-risk .card-next { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.15); }
+  .card.at-risk .card-next-label { color: var(--at-risk); }
+  .card.overdue .card-next { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2); }
+  .card.overdue .card-next-label { color: var(--overdue); }
+
+  /* ─── MODAL OVERLAY ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: #0f1929;
+    border: 1px solid rgba(0,255,136,0.25);
+    border-top: 3px solid var(--accent);
+    border-radius: 8px;
+    width: 520px; max-width: 95vw;
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 0 40px rgba(0,255,136,0.1), 0 20px 60px rgba(0,0,0,0.8);
+    padding: 0;
+    transform: translateY(8px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal.at-risk { border-top-color: var(--at-risk); }
+  .modal.overdue { border-top-color: var(--overdue); }
+  .modal.complete-card { border-top-color: var(--complete); }
+
+  .modal-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .modal-header-left { flex: 1; }
+  .modal-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .modal-job { font-size: 10px; color: var(--text3); }
+  .modal-client { font-size: 10px; color: var(--accent2); margin-top: 2px; }
+  .modal-close {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text2); font-size: 16px; cursor: pointer;
+    width: 28px; height: 28px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; font-family: inherit; flex-shrink: 0;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+
+  .modal-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  .modal-section-title {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.15em; color: var(--text3);
+    text-transform: uppercase; margin-bottom: 8px;
+    padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* SLA row in modal */
+  .modal-sla-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .modal-sla-block {
+    flex: 1; min-width: 100px;
+    background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid rgba(255,255,255,0.06);
+    padding: 8px 10px;
+  }
+  .modal-sla-label { font-size: 8px; color: var(--text3); letter-spacing: 0.1em; margin-bottom: 3px; }
+  .modal-sla-val { font-size: 13px; font-weight: 700; }
+
+  /* Team grid */
+  .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .team-member {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid rgba(255,255,255,0.05);
+    padding: 7px 10px;
+  }
+  .team-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; flex-shrink: 0;
+  }
+  .team-info { flex: 1; }
+  .team-name { font-size: 10px; font-weight: 600; color: var(--text); }
+  .team-role { font-size: 8px; color: var(--text3); letter-spacing: 0.08em; margin-top: 1px; }
+  .team-badge {
+    font-size: 8px; padding: 1px 5px; border-radius: 2px;
+    font-weight: 700; letter-spacing: 0.05em;
+  }
+  .team-badge.prod { background: rgba(0,255,136,0.12); color: var(--on-track); }
+  .team-badge.artist { background: rgba(0,212,255,0.1); color: var(--accent2); }
+  .team-badge.vfx { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .team-badge.lookdev { background: rgba(245,158,11,0.12); color: var(--at-risk); }
+
+  /* Status / next step in modal */
+  .modal-status-text {
+    font-size: 10px; color: var(--text2); line-height: 1.6;
+    background: rgba(0,0,0,0.2); border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);
+    padding: 8px 10px;
+  }
+  .modal-next {
+    background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.15);
+    border-radius: 4px; padding: 8px 10px;
+  }
+  .modal-next-label { font-size: 9px; color: var(--accent); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .modal-next-text { font-size: 10px; color: var(--text2); line-height: 1.6; }
+  .modal.at-risk .modal-next { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.2); }
+  .modal.at-risk .modal-next-label { color: var(--at-risk); }
+  .modal.overdue .modal-next { background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2); }
+  .modal.overdue .modal-next-label { color: var(--overdue); }
+
+  /* Links row */
+  .modal-links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .modal-link {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px; padding: 5px 10px;
+    font-size: 9px; color: var(--text2); text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .modal-link:hover { background: rgba(0,212,255,0.08); color: var(--accent2); border-color: rgba(0,212,255,0.2); }
+  .modal-link.disabled { opacity: 0.3; cursor: default; }
+
+  /* ─── TASK TRACKER ── */
+  .task-tracker {
+    width: 210px; flex-shrink: 0;
+    background: var(--bg2); border-left: 1px solid rgba(0,212,255,0.2);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .task-tracker-header {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid rgba(0,212,255,0.12);
+    background: rgba(0,212,255,0.04);
+    border-top: 3px solid var(--accent2);
+  }
+  .task-tracker-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+    color: var(--accent2); text-transform: uppercase;
+  }
+  .task-tracker-sub {
+    font-size: 8px; color: var(--text3); margin-top: 2px; letter-spacing: 0.08em;
+  }
+  .task-tracker-meta {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 5px;
+  }
+  .task-count { font-size: 9px; color: var(--text3); }
+  .task-count span { color: var(--accent2); font-weight: 700; }
+  .task-list {
+    flex: 1; overflow-y: auto; padding: 6px 0;
+  }
+  .task-list::-webkit-scrollbar { width: 3px; }
+  .task-list::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+
+  .task-item {
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    display: flex; align-items: flex-start; gap: 8px;
+    cursor: pointer; transition: background 0.15s, opacity 0.3s;
+    position: relative;
+  }
+  .task-item:hover { background: rgba(0,212,255,0.04); }
+  .task-item.completing {
+    opacity: 0; transform: translateX(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .task-checkbox {
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1px solid rgba(0,212,255,0.4);
+    flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    font-size: 9px;
+  }
+  .task-item:hover .task-checkbox { border-color: var(--accent2); background: rgba(0,212,255,0.1); }
+  .task-item.done .task-checkbox { background: var(--accent2); border-color: var(--accent2); color: #000; }
+  .task-content { flex: 1; }
+  .task-project {
+    font-size: 8px; font-weight: 700; letter-spacing: 0.06em;
+    padding: 1px 5px; border-radius: 2px; display: inline-block; margin-bottom: 3px;
+  }
+  .task-name {
+    font-size: 10px; color: var(--text); line-height: 1.35; font-weight: 500;
+  }
+  .task-item.done .task-name { text-decoration: line-through; color: var(--text3); }
+  .task-due {
+    display: flex; align-items: center; gap: 4px; margin-top: 3px;
+  }
+  .task-due-label { font-size: 8px; color: var(--text3); }
+  .task-due-val {
+    font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 2px;
+  }
+  .task-due-val.today { background: rgba(245,158,11,0.2); color: var(--at-risk); animation: blink 1.5s infinite; }
+  .task-due-val.asap { background: rgba(239,68,68,0.15); color: var(--overdue); }
+  .task-due-val.soon { background: rgba(245,158,11,0.12); color: var(--at-risk); }
+  .task-due-val.normal { background: rgba(0,255,136,0.1); color: var(--on-track); }
+  .task-due-val.tbd { background: rgba(255,255,255,0.05); color: var(--text3); }
+
+  .task-empty {
+    padding: 20px 12px; text-align: center;
+    font-size: 9px; color: var(--text3); letter-spacing: 0.08em; line-height: 1.6;
+  }
+
+  /* ─── RIGHT PANEL ── */
+  .right-panel {
+    width: 200px; flex-shrink: 0;
+    background: var(--bg2); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; padding: 10px 0 0;
+  }
+  .panel-title { font-size: 9px; font-weight: 700; letter-spacing: 0.15em; color: var(--text3); text-transform: uppercase; padding: 0 12px 8px; border-bottom: 1px solid rgba(0,255,136,0.08); }
+  .deadline-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .deadline-item { padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 2px; }
+  .deadline-item:hover { background: rgba(0,255,136,0.03); }
+  .deadline-name { font-size: 10px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .deadline-client { font-size: 8px; color: var(--text3); }
+  .deadline-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+  .deadline-date { font-size: 8px; color: var(--text2); }
+  .deadline-badge { font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 2px; }
+  .deadline-badge.green { background: rgba(0,255,136,0.12); color: var(--on-track); }
+  .deadline-badge.amber { background: rgba(245,158,11,0.15); color: var(--at-risk); }
+  .deadline-badge.red { background: rgba(239,68,68,0.15); color: var(--overdue); }
+  .panel-section-title { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--text3); padding: 10px 12px 6px; border-top: 1px solid rgba(0,255,136,0.08); text-transform: uppercase; }
+  .handoff-list { padding: 0 0 8px; }
+  .handoff-item { padding: 5px 12px; display: flex; align-items: flex-start; gap: 6px; font-size: 9px; color: var(--text2); line-height: 1.4; border-bottom: 1px solid rgba(255,255,255,0.02); }
+  .handoff-num { color: var(--accent2); font-weight: 700; flex-shrink: 0; }
+  .handoff-flag { color: var(--at-risk); }
+
+  /* ─── PIPELINE BENCH ── */
+  .bench-list { padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 4px; }
+  .bench-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 3px; padding: 5px 8px;
+    font-size: 9px; color: var(--text2); line-height: 1.3;
+  }
+  .bench-item:hover { background: rgba(255,255,255,0.06); }
+  .bench-name { flex: 1; font-size: 9px; color: var(--text2); }
+  .bench-badge {
+    font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 2px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .bench-badge.on-deck { background: rgba(0,212,255,0.1); color: var(--accent2); }
+  .bench-badge.on-hold { background: rgba(255,255,255,0.06); color: var(--text3); }
+
+  /* ─── BENCH DRAWER ── */
+  /* ─── TABBED DRAWER ── */
+  .bench-drawer {
+    position: fixed; bottom: 28px; left: 0; right: 0; z-index: 150;
+    background: #080e1c; border-top: 1px solid rgba(129,140,248,0.25);
+    height: 148px; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .drawer-tabs {
+    display: flex; align-items: stretch; flex-shrink: 0;
+    border-bottom: 1px solid rgba(129,140,248,0.15);
+    height: 28px;
+  }
+  .drawer-tab {
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 14px; cursor: pointer; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.1em; color: var(--text3); border-right: 1px solid rgba(129,140,248,0.1);
+    background: transparent; border-top: none; border-left: none; border-bottom: none;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.15s, background 0.15s;
+  }
+  .drawer-tab:hover { color: var(--col-purple); background: rgba(129,140,248,0.05); }
+  .drawer-tab.active { color: var(--col-purple); background: rgba(129,140,248,0.08); border-bottom: 2px solid var(--col-purple); }
+  .drawer-tab.active-complete { color: var(--complete); background: rgba(0,201,122,0.06); border-bottom: 2px solid var(--complete); }
+  .drawer-tab-count {
+    font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+    background: rgba(129,140,248,0.15); color: var(--col-purple);
+  }
+  .drawer-tab.active-complete .drawer-tab-count { background: rgba(0,201,122,0.15); color: var(--complete); }
+
+  .drawer-panel { display: none; flex: 1; overflow: hidden; }
+  .drawer-panel.active { display: flex; }
+  .drawer-inner {
+    padding: 8px 14px; display: flex; align-items: flex-start; gap: 8px;
+    width: 100%; overflow-x: auto; overflow-y: hidden;
+  }
+  .drawer-inner::-webkit-scrollbar { height: 3px; }
+  .drawer-inner::-webkit-scrollbar-thumb { background: rgba(129,140,248,0.3); border-radius: 2px; }
+
+  .bench-pill {
+    display: flex; flex-direction: column; gap: 4px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 5px; padding: 7px 10px;
+    width: 190px; flex-shrink: 0; height: 100%;
+    transition: background 0.15s; cursor: default;
+  }
+  .bench-pill:hover { background: rgba(129,140,248,0.07); border-color: rgba(129,140,248,0.2); }
+  .bench-pill.complete-pill:hover { background: rgba(0,201,122,0.05); border-color: rgba(0,201,122,0.2); cursor: pointer; }
+  .bench-pill-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+  .bench-pill-name { font-size: 10px; font-weight: 600; color: var(--text); line-height: 1.3; flex: 1; }
+  .bench-pill-badge { font-size: 8px; font-weight: 700; letter-spacing: 0.05em; white-space: nowrap; padding: 2px 5px; border-radius: 3px; flex-shrink: 0; }
+  .bench-pill-badge.on-deck { background: rgba(0,212,255,0.1); color: var(--accent2); }
+  .bench-pill-badge.on-hold { background: rgba(255,255,255,0.06); color: var(--text3); }
+  .bench-pill-badge.done { background: rgba(0,201,122,0.15); color: var(--complete); }
+  .bench-pill-badge.almost { background: rgba(245,158,11,0.12); color: var(--at-risk); }
+  .bench-pill-scrum { font-size: 9px; color: var(--text3); line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+
+  /* ─── TICKER ── */
+  .ticker-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 28px;
+    background: #060a12; border-top: 1px solid var(--border);
+    display: flex; align-items: center; overflow: hidden; z-index: 200;
+  }
+  .ticker-legend {
+    display: flex; align-items: center; gap: 10px; padding: 0 14px;
+    border-right: 1px solid var(--border); flex-shrink: 0; height: 100%;
+    background: rgba(0,255,136,0.04);
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .legend-dot.green { background: var(--on-track); box-shadow: 0 0 4px var(--on-track); }
+  .legend-dot.amber { background: var(--at-risk); }
+  .legend-dot.red { background: var(--overdue); }
+  .legend-dot.complete { background: var(--complete); box-shadow: 0 0 4px var(--complete); }
+  .ticker-scroll { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
+  .ticker-inner { display: flex; align-items: center; white-space: nowrap; animation: scroll-left 30s linear infinite; }
+  @keyframes scroll-left { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  .ticker-item { font-size: 10px; color: var(--text2); padding: 0 20px; border-right: 1px solid rgba(255,255,255,0.05); }
+  .ticker-item .t-arrow { color: var(--accent); }
+  .ticker-moved { font-size: 9px; color: var(--text3); letter-spacing: 0.1em; padding: 0 14px; flex-shrink: 0; }
+  .board-wrap::-webkit-scrollbar { height: 4px; }
+  .board-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .glow-green { text-shadow: 0 0 8px rgba(0,255,136,0.5); }
+  .glow-cyan { text-shadow: 0 0 8px rgba(0,212,255,0.5); }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-title glow-green">🟢 KARTEL | PRODUCTION COMMAND</div>
+    <div class="brand-sub">ACTIVE PIPELINE · 7 PROJECTS · 8 DELIVERABLES</div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="closest">
+    <div class="closest-label">▲ CLOSEST TO DEADLINE</div>
+    <div class="closest-items">
+      <div class="closest-item">
+        <span class="closest-rank">#1</span>
+        <span class="closest-name">Newell Outdoor</span>
+        <span class="closest-days" style="color:var(--at-risk)">TODAY</span>
+        <span class="closest-stage">Final Delivery</span>
+      </div>
+      <div class="closest-item">
+        <span class="closest-rank">#2</span>
+        <span class="closest-name">GoGo Running</span>
+        <span class="closest-days" style="color:var(--at-risk)">2 days</span>
+        <span class="closest-stage">Animatic</span>
+      </div>
+      <div class="closest-item">
+        <span class="closest-rank">#3</span>
+        <span class="closest-name">GoGo Soccer</span>
+        <span class="closest-days" style="color:var(--accent)">9 days</span>
+        <span class="closest-stage">Creative Brief</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-val amber">72%</div><div class="metric-label">ON-TIME<br>RATE</div></div>
+    <div class="header-divider" style="height:28px"></div>
+    <div class="metric"><div class="metric-val green">85%</div><div class="metric-label">FIRST-PASS<br>QUALITY</div></div>
+    <div class="header-divider" style="height:28px"></div>
+    <div class="metric"><div class="metric-val cyan">3</div><div class="metric-label">CAPACITY<br>SLOTS</div></div>
+    <div class="header-divider" style="height:28px"></div>
+    <div class="metric"><div class="metric-val" style="color:var(--overdue)">2</div><div class="metric-label">OVERDUE<br>ITEMS</div></div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="clock-block">
+    <div class="clock glow-cyan" id="clock">--:--:--</div>
+    <div class="clock-date" id="clock-date">--- --- --</div>
+  </div>
+</div>
+
+<!-- ── SUBHEADER ── -->
+<div class="subheader">
+  <div class="live-dot">LIVE</div>
+  <div class="header-divider" style="height:16px"></div>
+  <div class="subheader-alert">⚠ <span>SCRIPT APPROVAL PENDING</span> — GoGo Soccer (sent EOD Mon 3/9) · Must resolve before Mon 3/16 or Soccer schedule slips</div>
+  <div style="flex:1"></div>
+  <div class="subheader-alert" style="color:var(--text3)">TARGET: 90% on-time · 85% first-pass · 4:1 client-producer ratio</div>
+</div>
+
+<!-- ── INFO STRIP ── -->
+<div class="info-strip">
+  <div class="info-block">
+    <div class="info-block-label">⏱ Deadlines</div>
+    <div class="info-deadlines">
+      <div class="info-deadline-item"><span class="info-deadline-name">Newell Outdoor</span><span class="info-deadline-badge amber">TODAY</span></div>
+      <div class="info-deadline-item"><span class="info-deadline-name">GoGo Running (CTV)</span><span class="info-deadline-badge amber">Mar 13 · 2d</span></div>
+      <div class="info-deadline-item"><span class="info-deadline-name">NEB Academy</span><span class="info-deadline-badge green">Mar 20 · 9d</span></div>
+      <div class="info-deadline-item"><span class="info-deadline-name">GoGo Soccer (Social)</span><span class="info-deadline-badge green">Mar 20 · 9d</span></div>
+      <div class="info-deadline-item"><span class="info-deadline-name">Treefort Test Shoot</span><span class="info-deadline-badge red">23d OVR</span></div>
+    </div>
+  </div>
+  <div class="info-block" style="flex:0 0 auto;padding-right:20px">
+    <div class="info-block-label">🔄 Handoffs</div>
+    <div class="info-handoffs">
+      <div class="info-handoff-item"><span class="info-handoff-num">#1</span><span class="info-handoff-text">Sales→Prod: Clear</span></div>
+      <div class="info-handoff-item"><span class="info-handoff-num">#2</span><span class="info-handoff-text info-handoff-flag">Prod→Gen: ⚠ NEB Academy</span></div>
+      <div class="info-handoff-item"><span class="info-handoff-num">#3</span><span class="info-handoff-text">Gen→Prod: GoGo Running exp. today</span></div>
+      <div class="info-handoff-item"><span class="info-handoff-num">#4</span><span class="info-handoff-text info-handoff-flag">Prod→Sales: ⚠ 3 closing rpts</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="board-wrap">
+    <div class="board">
+
+      <!-- CREATIVE BRIEF -->
+      <div class="col" id="col-creative-brief">
+        <div class="col-header"><div class="col-title">Creative Brief</div><div class="col-meta">1 project</div></div>
+        <div class="col-cards">
+          <div class="card at-risk" onclick="openModal('gogo-soccer')">
+            <span class="card-click-hint">CLICK FOR DETAILS</span>
+            <div class="card-top"><div class="card-name">GoGo Yogurt — Soccer</div><div class="sla-badge at-risk">9 days</div></div>
+            <div class="card-job">2026-009 · "The Hand" concept</div>
+            <div class="card-client">Horizon Media / GoGo Yogurt</div>
+            <div class="card-producer">
+              <div class="avatar-circle" style="background:#0e7c5a;color:#00ff88;width:16px;height:16px;font-size:7px">VD</div>
+              <span class="avatar-name">Veronica Diaz</span>
+              <span class="producer-label">PROD</span>
+              <div class="artist-pill" onclick="event.stopPropagation();openModal('gogo-soccer')"><span class="artist-pill-icon">👥</span>3 artists</div>
+            </div>
+            <div class="card-status">Script sent EOD 3/9. Approval pending. Social asset — Soccer — Protein pouch (purple).</div>
+            <div class="card-next"><div class="card-next-label">⚠ NEXT STEP</div><div class="card-next-text">Awaiting script approval — LookDev w/ Logik starts 3/16 once approved</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOOKDEV -->
+      <div class="col" id="col-lookdev">
+        <div class="col-header"><div class="col-title">LookDev</div><div class="col-meta">0 projects</div></div>
+        <div class="col-cards"><div class="col-empty">— NO ACTIVE PROJECTS —</div></div>
+      </div>
+
+      <!-- MOODBOARD -->
+      <div class="col" id="col-storyboard">
+        <div class="col-header"><div class="col-title">Storyboard</div><div class="col-meta">0 projects</div></div>
+        <div class="col-cards"><div class="col-empty">— NO ACTIVE PROJECTS —</div></div>
+      </div>
+
+      <!-- ANIMATIC -->
+      <div class="col" id="col-animatic">
+        <div class="col-header"><div class="col-title">Animatic</div><div class="col-meta">1 project</div></div>
+        <div class="col-cards">
+          <div class="card at-risk" onclick="openModal('gogo-running')">
+            <span class="card-click-hint">CLICK FOR DETAILS</span>
+            <div class="card-top"><div class="card-name">GoGo Yogurt — Running</div><div class="sla-badge at-risk">2 days</div></div>
+            <div class="card-job">2026-009 · "The Hand" concept</div>
+            <div class="card-client">Horizon Media / GoGo Yogurt</div>
+            <div class="card-producer">
+              <div class="avatar-circle" style="background:#0e7c5a;color:#00ff88;width:16px;height:16px;font-size:7px">VD</div>
+              <span class="avatar-name">Veronica Diaz</span>
+              <span class="producer-label">PROD</span>
+              <div class="artist-pill" onclick="event.stopPropagation();openModal('gogo-running')"><span class="artist-pill-icon">👥</span>3 artists</div>
+            </div>
+            <div class="card-status">Animatic delivered to client EOD 3/11. CTV asset — Running — Electrolytes pouch (blue).</div>
+            <div class="card-next"><div class="card-next-label">⚡ NEXT STEP</div><div class="card-next-text">Client approval AM 3/12 → begin generation/edit → v01 mid-day 3/13 → Final EOD 3/13</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROUGH CUT -->
+      <div class="col" id="col-rough-cut">
+        <div class="col-header"><div class="col-title">Rough Cut</div><div class="col-meta">1 project</div></div>
+        <div class="col-cards">
+          <div class="card" onclick="openModal('neb-academy')">
+            <span class="card-click-hint">CLICK FOR DETAILS</span>
+            <div class="card-top"><div class="card-name">NEB Academy</div><div class="sla-badge on-track">9 days</div></div>
+            <div class="card-job">2026-014 · New England Biologics</div>
+            <div class="card-client">New England Biologics</div>
+            <div class="card-producer">
+              <div class="avatar-circle" style="background:#5c1a6e;color:#d46cff;width:16px;height:16px;font-size:7px">MM</div>
+              <span class="avatar-name">Monica Monique</span>
+              <span class="producer-label">PROD</span>
+              <div class="artist-pill" onclick="event.stopPropagation();openModal('neb-academy')"><span class="artist-pill-icon">👥</span>2 artists</div>
+            </div>
+            <div class="card-status">LoRA training active (updated 3/11). Active generation phase in progress.</div>
+            <div class="card-next"><div class="card-next-label">▶ NEXT STEP</div><div class="card-next-text">Continue generation phase → deliver rough cut for review</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINE CUT -->
+      <div class="col" id="col-fine-cut">
+        <div class="col-header"><div class="col-title">Fine Cut</div><div class="col-meta">0 projects</div></div>
+        <div class="col-cards"><div class="col-empty">— NO ACTIVE PROJECTS —</div></div>
+      </div>
+
+      <!-- FINAL DELIVERY -->
+      <div class="col" id="col-final-delivery">
+        <div class="col-header"><div class="col-title">Final Delivery</div><div class="col-meta">2 projects</div></div>
+        <div class="col-cards">
+          <div class="card at-risk" onclick="openModal('newell-outdoor')">
+            <span class="card-click-hint">CLICK FOR DETAILS</span>
+            <div class="card-top"><div class="card-name">Newell Outdoor — Sizzle + Deck</div><div class="sla-badge today">TODAY</div></div>
+            <div class="card-job">2026-002 · Coleman / Bubba / Contigo</div>
+            <div class="card-client">Newell Brands</div>
+            <div class="card-producer">
+              <div class="avatar-circle" style="background:#0e7c5a;color:#00ff88;width:16px;height:16px;font-size:7px">VD</div>
+              <span class="avatar-name">Veronica Diaz</span>
+              <span class="producer-label">PROD</span>
+              <div class="artist-pill" onclick="event.stopPropagation();openModal('newell-outdoor')"><span class="artist-pill-icon">👥</span>2 artists</div>
+            </div>
+            <div class="card-status">Sizzle video + brand deck due today. LoRA AI on product photography. Exec presentation 3/23.</div>
+            <div class="card-next"><div class="card-next-label">⚡ NEXT STEP</div><div class="card-next-text">Deliver sizzle + brand deck TODAY → Exec Leadership Presentation 2026-03-23</div></div>
+          </div>
+          <div class="card overdue" onclick="openModal('treefort')">
+            <span class="card-click-hint">CLICK FOR DETAILS</span>
+            <div class="card-top"><div class="card-name">Treefort Test Shoot</div><div class="sla-badge overdue">23d OVR</div></div>
+            <div class="card-job">2026-011 · Treefort</div>
+            <div class="card-client">Treefort</div>
+            <div class="card-producer">
+              <div class="avatar-circle" style="background:#3a2a0e;color:#f59e0b;width:16px;height:16px;font-size:7px">SA</div>
+              <span class="avatar-name">Stuart Acher</span>
+              <span class="producer-label">PROD</span>
+            </div>
+            <div class="card-status">OVERDUE — 23 days past SLA (Feb 17). Status unconfirmed.</div>
+            <div class="card-next"><div class="card-next-label">🔴 NEXT STEP</div><div class="card-next-text">Confirm current status with Stuart — active or stale?</div></div>
+          </div>
+        </div>
+      </div>
+
+
+
+    </div>
+  </div>
+
+  <!-- TASK TRACKER -->
+  <div class="task-tracker">
+    <div class="task-tracker-header">
+      <div class="task-tracker-title">⚡ Task Tracker</div>
+      <div class="task-tracker-sub">FROM IPP · CLICK TO COMPLETE</div>
+      <div class="task-tracker-meta">
+        <div class="task-count"><span id="task-remaining">8</span> remaining</div>
+        <div style="font-size:8px;color:var(--text3)" id="task-completed-count">0 done today</div>
+      </div>
+    </div>
+    <div class="task-list" id="task-list"></div>
+  </div>
+
+
+</div>
+
+<!-- ── TABBED DRAWER ── -->
+<div class="bench-drawer" id="bench-drawer">
+  <div class="drawer-tabs">
+    <button class="drawer-tab active" id="tab-bench" onclick="switchTab('bench')">⏸ PIPELINE BENCH <span class="drawer-tab-count" id="bench-count">9</span></button>
+    <button class="drawer-tab" id="tab-complete" onclick="switchTab('complete')">✅ COMPLETE <span class="drawer-tab-count" id="complete-count" style="background:rgba(0,201,122,0.15);color:var(--complete)">3</span></button>
+  </div>
+
+  <!-- BENCH PANEL -->
+  <div class="drawer-panel active" id="panel-bench">
+    <div class="drawer-inner">
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">ShellzOrb</span><span class="bench-pill-badge on-deck">ON DECK</span></div><div class="bench-pill-scrum">2/11 — Waiting on more info from client.</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">Crispin x O'Keeffe's</span><span class="bench-pill-badge on-deck">ON DECK</span></div><div class="bench-pill-scrum">2/17 — Waiting on client follow up.</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">"What is Kartel" Sizzle</span><span class="bench-pill-badge on-hold">ON HOLD</span></div><div class="bench-pill-scrum">2/24 — Want to rework script and clarify direction. No rush for Kevin's keynote.</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">Lexus RX500 Spec</span><span class="bench-pill-badge on-hold">ON HOLD</span></div><div class="bench-pill-scrum">2/18 — Waiting on client follow up.</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">Princeton Nurseries</span><span class="bench-pill-badge on-hold">ON HOLD</span></div><div class="bench-pill-scrum">1/28 — Stuart to discuss with Princeton securing payment.</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">The Last Aenjel</span><span class="bench-pill-badge on-hold">ON HOLD</span></div><div class="bench-pill-scrum">2/13 — Migrating from Linux to Windows today.</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">Every Day Dose #2</span><span class="bench-pill-badge on-hold">ON HOLD</span></div><div class="bench-pill-scrum">1/29 — This is with sales. No follow up for production.</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">Social — Seedance Gen.</span><span class="bench-pill-badge on-hold">ON HOLD</span></div><div class="bench-pill-scrum">2/18 — In legal complications...</div></div>
+      <div class="bench-pill"><div class="bench-pill-top"><span class="bench-pill-name">Social Media Campaign</span><span class="bench-pill-badge on-hold">ON HOLD</span></div><div class="bench-pill-scrum">2/23 — Pausing for additional planning/strategy on this.</div></div>
+    </div>
+  </div>
+
+  <!-- COMPLETE PANEL -->
+  <div class="drawer-panel" id="panel-complete">
+    <div class="drawer-inner">
+      <div class="bench-pill complete-pill" onclick="openModal('real-estate')"><div class="bench-pill-top"><span class="bench-pill-name">Kartel Real Estate</span><span class="bench-pill-badge done">DONE</span></div><div class="bench-pill-scrum">Delivered 3/11 · ProRes HQ pending from Stuart · Handoff #4 SLA 3/19</div></div>
+      <div class="bench-pill complete-pill" onclick="openModal('lidl')"><div class="bench-pill-top"><span class="bench-pill-name">LIDL</span><span class="bench-pill-badge almost">ALMOST</span></div><div class="bench-pill-scrum">Delivered 3/11 · 1 final video still pending · Closing Report not yet initiated</div></div>
+      <div class="bench-pill complete-pill" onclick="openModal('newell-bubba')"><div class="bench-pill-top"><span class="bench-pill-name">Newell Bubba</span><span class="bench-pill-badge done">DONE</span></div><div class="bench-pill-scrum">Final presentations delivered Jan 22, 2026 · Handoff #4 Closing Report overdue</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TICKER ── -->
+<div class="ticker-bar">
+  <div class="ticker-legend">
+    <div class="legend-item"><div class="legend-dot green"></div><span style="color:var(--on-track)">ON TRACK</span></div>
+    <div class="legend-item"><div class="legend-dot amber"></div><span style="color:var(--at-risk)">AT RISK</span></div>
+    <div class="legend-item"><div class="legend-dot red"></div><span style="color:var(--overdue)">OVERDUE</span></div>
+    <div class="legend-item"><div class="legend-dot complete"></div><span style="color:var(--complete)">COMPLETE</span></div>
+  </div>
+  <div class="ticker-moved">MOVED THIS WEEK</div>
+  <div class="ticker-scroll"><div class="ticker-inner" id="ticker-inner"></div></div>
+</div>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-job" id="modal-job"></div>
+        <div class="modal-client" id="modal-client"></div>
+      </div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-section-title">SLA STATUS</div>
+        <div class="modal-sla-row" id="modal-sla-row"></div>
+      </div>
+      <div>
+        <div class="modal-section-title">PRODUCTION TEAM</div>
+        <div class="team-grid" id="modal-team"></div>
+      </div>
+      <div>
+        <div class="modal-section-title">CURRENT STATUS</div>
+        <div class="modal-status-text" id="modal-status"></div>
+      </div>
+      <div>
+        <div class="modal-next" id="modal-next">
+          <div class="modal-next-label" id="modal-next-label">NEXT STEP</div>
+          <div class="modal-next-text" id="modal-next-text"></div>
+        </div>
+      </div>
+      <div>
+        <div class="modal-section-title">LINKS</div>
+        <div class="modal-links" id="modal-links"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = h+':'+m+':'+s;
+  const days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('clock-date').textContent = days[now.getDay()]+' '+months[now.getMonth()]+' '+String(now.getDate()).padStart(2,'0');
+}
+updateClock(); setInterval(updateClock, 1000);
+
+// ── TICKER ──
+const tickerItems = [
+  {name:'Kartel Real Estate',from:'Fine Cut',to:'Complete',date:'Mar 11',color:'#818cf8'},
+  {name:'LIDL (2025-152)',from:'Final Delivery',to:'Complete',date:'Mar 11',color:'#818cf8'},
+  {name:'GoGo Running',from:'Storyboard',to:'Animatic',date:'Mar 11',color:'#00ff88'},
+  {name:'GoGo Soccer',from:'Storyboard',to:'Creative Brief',date:'Mar 10',color:'#f59e0b'},
+  {name:'NEB Academy',from:'Pre-Production',to:'Rough Cut',date:'Mar 11',color:'#00ff88'},
+  {name:'Newell Outdoor',from:'Post-Production',to:'Final Delivery',date:'Mar 10',color:'#f59e0b'},
+  {name:'Treefort Test Shoot',from:'Production',to:'Final Delivery',date:'Feb 17',color:'#ef4444'},
+];
+(function buildTicker(){
+  const inner = document.getElementById('ticker-inner');
+  let html='';
+  for(let i=0;i<2;i++) tickerItems.forEach(item=>{
+    html+=`<div class="ticker-item"><span style="color:${item.color};font-weight:600">${item.name}</span><span style="color:var(--text3)"> · </span><span>${item.from}</span><span class="t-arrow"> → </span><span style="color:var(--text)">${item.to}</span><span style="color:var(--text3)"> · </span><span style="color:var(--text3)">${item.date}</span></div>`;
+  });
+  inner.innerHTML=html;
+  inner.style.animationDuration=(inner.scrollWidth/2/60)+'s';
+})();
+
+// ── PROJECT DATA ──
+const projects = {
+  'gogo-soccer': {
+    title: 'GoGo Yogurt — Soccer',
+    job: '2026-009 · "The Hand" concept · Social (15sec)',
+    client: 'Horizon Media / GoGo Yogurt',
+    sla: [{label:'SLA DEADLINE',val:'Mar 20, 2026',color:'var(--at-risk)'},{label:'DAYS REMAINING',val:'9 days',color:'var(--at-risk)'},{label:'PHASE',val:'Creative Brief',color:'var(--accent2)'},{label:'PRODUCT',val:'Protein Pouch (purple)',color:'var(--text2)'}],
+    team: [
+      {initials:'VD',name:'Veronica Diaz',role:'Production Manager',badge:'prod',bg:'#0e7c5a',color:'#00ff88'},
+      {initials:'DS',name:'D. Strange',role:'Scriptwriter / Storyboard',badge:'artist',bg:'#1a3a5c',color:'#00d4ff'},
+      {initials:'LG',name:'Logik',role:'LookDev / Keyframes',badge:'lookdev',bg:'#3a2a0e',color:'#f59e0b'},
+      {initials:'TBD',name:'TBD',role:'Motion Cut / Generation',badge:'artist',bg:'#2a1a3a',color:'#c084fc'},
+    ],
+    status: 'Script sent to client EOD Monday 3/9. Client approval still pending — this is a blocker for the entire week of 3/16 production schedule. Social asset format. Product: Protein pouch (purple). "The Hand" concept.',
+    nextLabel: '⚠ NEXT STEP',
+    next: 'Await client script approval → LookDev IP (Logik) Mon 3/16 → Keyframes Tue 3/17 → Animatic EOD Tue 3/17 → Motion Cut 3/18–3/19 → Final EOD Fri 3/20',
+    links: [{label:'Frame.io',icon:'🎬',url:null},{label:'Drive Folder',icon:'📁',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: 'at-risk'
+  },
+  'gogo-running': {
+    title: 'GoGo Yogurt — Running',
+    job: '2026-009 · "The Hand" concept · CTV (30sec)',
+    client: 'Horizon Media / GoGo Yogurt',
+    sla: [{label:'SLA DEADLINE',val:'Mar 13, 2026',color:'var(--at-risk)'},{label:'DAYS REMAINING',val:'2 days',color:'var(--at-risk)'},{label:'PHASE',val:'Animatic → Generation',color:'var(--accent2)'},{label:'PRODUCT',val:'Electrolytes Pouch (blue)',color:'var(--text2)'}],
+    team: [
+      {initials:'VD',name:'Veronica Diaz',role:'Production Manager',badge:'prod',bg:'#0e7c5a',color:'#00ff88'},
+      {initials:'DS',name:'D. Strange',role:'Scriptwriter / Animatic',badge:'artist',bg:'#1a3a5c',color:'#00d4ff'},
+      {initials:'LG',name:'Logik',role:'LookDev / Keyframes',badge:'lookdev',bg:'#3a2a0e',color:'#f59e0b'},
+      {initials:'TBD',name:'TBD',role:'Motion Cut / Generation',badge:'artist',bg:'#2a1a3a',color:'#c084fc'},
+    ],
+    status: 'Animatic delivered to client EOD 3/11 for sign-off on story, timing, music, and VO. CTV format (30sec). Product: Electrolytes pouch (blue). Awaiting client approval to begin AI generation phase.',
+    nextLabel: '⚡ NEXT STEP',
+    next: 'Client approval AM 3/12 → Begin video generation/edit → v01 mid-day 3/13 (real-time notes if time allows) → Final video EOD 3/13',
+    links: [{label:'Frame.io',icon:'🎬',url:null},{label:'Drive Folder',icon:'📁',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: 'at-risk'
+  },
+  'neb-academy': {
+    title: 'NEB Academy',
+    job: '2026-014 · New England Biologics',
+    client: 'New England Biologics',
+    sla: [{label:'SLA DEADLINE',val:'Mar 20, 2026',color:'var(--on-track)'},{label:'DAYS REMAINING',val:'9 days',color:'var(--on-track)'},{label:'PHASE',val:'Rough Cut',color:'var(--accent2)'},{label:'STATUS',val:'On Track',color:'var(--on-track)'}],
+    team: [
+      {initials:'MM',name:'Monica Monique',role:'VP Creative / Producer',badge:'prod',bg:'#5c1a6e',color:'#d46cff'},
+      {initials:'SW',name:'Seb Webber',role:'AI Generation / Edit',badge:'artist',bg:'#1a3a5c',color:'#00d4ff'},
+    ],
+    status: 'LoRA training active, last updated 3/11. Active AI generation phase in progress. Part of NEB suite alongside Wolverine Stack and Sam Is Fat projects.',
+    nextLabel: '▶ NEXT STEP',
+    next: 'Continue generation phase → deliver rough cut for Monica review → iterate → final delivery by Mar 20',
+    links: [{label:'Frame.io',icon:'🎬',url:null},{label:'Drive Folder',icon:'📁',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: ''
+  },
+  'newell-outdoor': {
+    title: 'Newell Outdoor — Sizzle + Brand Deck',
+    job: '2026-002 · Coleman / Bubba / Contigo drinkware',
+    client: 'Newell Brands',
+    sla: [{label:'SLA DEADLINE',val:'Mar 11, 2026',color:'var(--at-risk)'},{label:'DAYS REMAINING',val:'TODAY',color:'var(--at-risk)'},{label:'PHASE',val:'Final Delivery',color:'var(--accent2)'},{label:'NEXT MILESTONE',val:'Exec Pres. Mar 23',color:'var(--text2)'}],
+    team: [
+      {initials:'VD',name:'Veronica Diaz',role:'Production Manager',badge:'prod',bg:'#0e7c5a',color:'#00ff88'},
+      {initials:'BV',name:'Brandon Valedez',role:'LoRA Training / Data',badge:'artist',bg:'#1a3a5c',color:'#00d4ff'},
+      {initials:'SE',name:'Sean Geisterfer',role:'IRL Capture / Data Eng.',badge:'artist',bg:'#1a4c3a',color:'#00ff88'},
+    ],
+    status: 'Sizzle video + brand deck for Coleman, Bubba, and Contigo drinkware. Method: LoRA AI training on product photography. Delivery due TODAY. Executive Leadership Presentation scheduled for March 23.',
+    nextLabel: '⚡ DELIVER TODAY',
+    next: 'Deliver sizzle video + brand deck to client TODAY → prep for Newell Executive Leadership Presentation on March 23, 2026',
+    links: [{label:'Frame.io',icon:'🎬',url:null},{label:'Drive Folder',icon:'📁',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: 'at-risk'
+  },
+  'treefort': {
+    title: 'Treefort Test Shoot',
+    job: '2026-011 · Treefort',
+    client: 'Treefort',
+    sla: [{label:'SLA DEADLINE',val:'Feb 17, 2026',color:'var(--overdue)'},{label:'OVERDUE BY',val:'23 days',color:'var(--overdue)'},{label:'PHASE',val:'Final Delivery',color:'var(--accent2)'},{label:'STATUS',val:'OVERDUE',color:'var(--overdue)'}],
+    team: [
+      {initials:'SA',name:'Stuart Acher',role:'Producer / Editor',badge:'prod',bg:'#3a2a0e',color:'#f59e0b'},
+    ],
+    status: 'OVERDUE — 23 days past SLA (Feb 17, 2026). Current status unconfirmed. May be stale/inactive — needs direct confirmation from Stuart.',
+    nextLabel: '🔴 ACTION REQUIRED',
+    next: 'Confirm current status with Stuart Acher — is this project still active or has it been cancelled/stalled? Update tracker accordingly.',
+    links: [{label:'Frame.io',icon:'🎬',url:null},{label:'Drive Folder',icon:'📁',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: 'overdue'
+  },
+  'real-estate': {
+    title: 'Kartel Real Estate',
+    job: '2026-015 · Internal Kartel AI project',
+    client: 'Kartel AI (internal)',
+    sla: [{label:'DELIVERED',val:'Mar 11, 2026',color:'#818cf8'},{label:'DRIVE UPLOAD',val:'Complete',color:'var(--on-track)'},{label:'FORMAT',val:'MP4 (placeholder)',color:'var(--at-risk)'},{label:'STATUS',val:'Almost Done',color:'var(--at-risk)'}],
+    team: [
+      {initials:'SA',name:'Stuart Acher',role:'Producer / Editor',badge:'prod',bg:'#3a2a0e',color:'#f59e0b'},
+    ],
+    status: 'Project delivered by Stuart 3/11. Drive folder uploaded by Wayan 3/11. MP4 file currently in final deliverables folder as a placeholder. ProRes HQ version still needed from Stuart for proper archival.',
+    nextLabel: '📋 PENDING',
+    next: 'Wayan to request ProRes HQ master from Stuart — reminder set for Thu 3/12 AM',
+    links: [{label:'Drive Folder',icon:'📁',url:'https://drive.google.com'},{label:'Frame.io',icon:'🎬',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: 'complete-card'
+  },
+  'lidl': {
+    title: 'LIDL',
+    job: '2025-150 / 151 / 152 · LIDL campaign',
+    client: 'LIDL',
+    sla: [{label:'DELIVERED',val:'Mar 11, 2026',color:'#818cf8'},{label:'FINAL VIDEO',val:'Pending receipt',color:'var(--at-risk)'},{label:'HANDOFF #4',val:'Pending',color:'var(--at-risk)'},{label:'STATUS',val:'Almost Done',color:'var(--at-risk)'}],
+    team: [
+      {initials:'SW',name:'Seb Webber',role:'Artist / Editor',badge:'artist',bg:'#1a3a5c',color:'#00d4ff'},
+    ],
+    status: 'Multiple LIDL deliverables completed and delivered 3/11. One final video still pending receipt from artist before project can be fully archived. Handoff #4 (Closing Report) cannot be initiated until final video is in.',
+    nextLabel: '📋 PENDING CLOSURE',
+    next: 'Receive final video from artist → upload to Masters Drive → initiate Handoff #4 Closing Report (SLA: 5 business days from completion)',
+    links: [{label:'Drive Folder',icon:'📁',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: 'complete-card'
+  },
+  'newell-bubba': {
+    title: 'Newell Bubba',
+    job: '2026-001 · Newell Brands — Bubba drinkware',
+    client: 'Newell Brands',
+    sla: [{label:'DELIVERED',val:'Jan 22, 2026',color:'#818cf8'},{label:'HANDOFF #4',val:'NOT STARTED',color:'var(--overdue)'},{label:'H4 SLA',val:'Overdue',color:'var(--overdue)'},{label:'STATUS',val:'Needs Closing Report',color:'var(--at-risk)'}],
+    team: [],
+    status: 'Final presentations delivered to client January 22, 2026. Project is complete on the delivery side but Handoff #4 (Closing Report) has not been initiated. This is overdue — SLA is 5 business days from delivery.',
+    nextLabel: '📋 INITIATE HANDOFF #4',
+    next: 'Compile Closing Report: delivery metrics, margin analysis, case study materials, upsell opportunities → deliver to REV (via ULTRON) for NPS collection',
+    links: [{label:'Drive Folder',icon:'📁',url:null},{label:'AirTable',icon:'📋',url:null}],
+    cardClass: 'complete-card'
+  }
+};
+
+// ── MODAL ──
+function openModal(id) {
+  const p = projects[id];
+  if(!p) return;
+  const modal = document.getElementById('modal');
+  modal.className = 'modal ' + (p.cardClass || '');
+
+  document.getElementById('modal-title').textContent = p.title;
+  document.getElementById('modal-job').textContent = p.job;
+  document.getElementById('modal-client').textContent = p.client;
+
+  // SLA blocks
+  document.getElementById('modal-sla-row').innerHTML = p.sla.map(s=>
+    `<div class="modal-sla-block"><div class="modal-sla-label">${s.label}</div><div class="modal-sla-val" style="color:${s.color}">${s.val}</div></div>`
+  ).join('');
+
+  // Team
+  const teamHtml = p.team.length
+    ? p.team.map(m=>`
+        <div class="team-member">
+          <div class="team-avatar" style="background:${m.bg};color:${m.color}">${m.initials}</div>
+          <div class="team-info">
+            <div class="team-name">${m.name}</div>
+            <div class="team-role">${m.role}</div>
+          </div>
+          <div class="team-badge ${m.badge}">${m.badge.toUpperCase()}</div>
+        </div>`).join('')
+    : '<div style="color:var(--text3);font-size:10px;grid-column:span 2;padding:8px 0">No team data available</div>';
+  document.getElementById('modal-team').innerHTML = teamHtml;
+
+  document.getElementById('modal-status').textContent = p.status;
+  document.getElementById('modal-next-label').textContent = p.nextLabel;
+  document.getElementById('modal-next-text').textContent = p.next;
+
+  // Links
+  document.getElementById('modal-links').innerHTML = p.links.map(l=>
+    l.url
+      ? `<a class="modal-link" href="${l.url}" target="_blank">${l.icon} ${l.label}</a>`
+      : `<span class="modal-link disabled">${l.icon} ${l.label} — TBD</span>`
+  ).join('');
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModalBtn() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModal(e) {
+  if(e.target === document.getElementById('modal-overlay')) closeModalBtn();
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModalBtn(); });
+
+// ── TASK TRACKER ──
+const tasks = [
+  { id:1, project:'Newell', projectColor:'#00ff88', projectBg:'rgba(0,255,136,0.12)', task:'Deliver sizzle video + brand deck to client', due:'TODAY', dueClass:'today' },
+  { id:2, project:'GoGo Running', projectColor:'#f59e0b', projectBg:'rgba(245,158,11,0.12)', task:'Client animatic approval — begin generation', due:'Mar 12 AM', dueClass:'today' },
+  { id:3, project:'GoGo Soccer', projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)', task:'Chase client script approval — blocker for 3/16', due:'ASAP', dueClass:'asap' },
+  { id:4, project:'Real Estate', projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)', task:'Request ProRes HQ master from Stuart', due:'Mar 12', dueClass:'soon' },
+  { id:5, project:'fal.ai', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)', task:'Wayan follow up w/ Luke + Ben on contract signing', due:'Mar 12', dueClass:'soon' },
+  { id:6, project:'LIDL', projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)', task:'Receive final video → archive → Handoff #4', due:'TBD', dueClass:'tbd' },
+  { id:7, project:'Treefort', projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)', task:'Confirm project status with Stuart — active or stale?', due:'ASAP', dueClass:'asap' },
+  { id:8, project:'Production', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)', task:'Finalize production contact list (artists, mixers, etc.)', due:'This week', dueClass:'normal' },
+  { id:9, project:'Frame.io', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)', task:'Review Frame.io materials with Estefania', due:'This week', dueClass:'normal' },
+  { id:10, project:'NEB #4', projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)', task:'Initiate Handoff #4 Closing Reports (Newell Bubba, Marc Jacobs, Masked Singer)', due:'This week', dueClass:'normal' },
+];
+
+let completedCount = 0;
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  const active = tasks.filter(t => !t.done);
+  const remaining = active.length;
+  document.getElementById('task-remaining').textContent = remaining;
+  document.getElementById('task-completed-count').textContent = completedCount + ' done today';
+
+  if (active.length === 0) {
+    list.innerHTML = '<div class="task-empty">✅ All tasks complete!<br><br>New tasks will appear<br>here from IPP.</div>';
+    return;
+  }
+
+  list.innerHTML = active.map(t => `
+    <div class="task-item" id="task-${t.id}" onclick="completeTask(${t.id})">
+      <div class="task-checkbox"></div>
+      <div class="task-content">
+        <div class="task-project" style="color:${t.projectColor};background:${t.projectBg}">${t.project}</div>
+        <div class="task-name">${t.task}</div>
+        <div class="task-due">
+          <span class="task-due-label">DUE</span>
+          <span class="task-due-val ${t.dueClass}">${t.due}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function completeTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task || task.done) return;
+  const el = document.getElementById('task-' + id);
+  if (el) {
+    el.classList.add('completing');
+    setTimeout(() => {
+      task.done = true;
+      completedCount++;
+      renderTasks();
+    }, 400);
+  }
+}
+
+renderTasks();
+
+// ── LIVE SYNC ──
+const API_URL = '/api/board-data';
+const REFRESH_MS = 30_000;
+let liveDataLoaded = false;
+
+const COLUMN_IDS = {
+  'Creative Brief': 'col-creative-brief',
+  'LookDev':        'col-lookdev',
+  'Storyboard':     'col-storyboard',
+  'Animatic':       'col-animatic',
+  'Rough Cut':      'col-rough-cut',
+  'Fine Cut':       'col-fine-cut',
+  'Final Delivery': 'col-final-delivery',
+};
+
+function avatarHtml(producer) {
+  if (!producer) return '';
+  const { name, initials, bg, fg } = producer;
+  const ini = initials || name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  return `<div class="avatar-circle" style="background:${bg||'#1a2a3a'};color:${fg||'#7a9bb5'};width:16px;height:16px;font-size:7px">${ini}</div>
+          <span class="avatar-name">${name}</span><span class="producer-label">PROD</span>`;
+}
+
+function buildCard(card) {
+  const { id, name, jobId, client, producer, slaBadge, cardClass, scrumNote, scrumDate } = card;
+  const badgeCls = slaBadge.cls || 'on-track';
+  const cls = cardClass || '';
+  const hasDetail = !!projects[id];
+
+  return `<div class="card${cls ? ' '+cls : ''}${hasDetail ? '' : ''}" onclick="${hasDetail ? `openModal('${id}')` : ''}">
+    ${hasDetail ? '<span class="card-click-hint">CLICK FOR DETAILS</span>' : ''}
+    <div class="card-top">
+      <div class="card-name">${name}</div>
+      <div class="sla-badge ${badgeCls}">${slaBadge.label}</div>
+    </div>
+    <div class="card-job">${jobId}</div>
+    <div class="card-client">${client}</div>
+    ${producer ? `<div class="card-producer">${avatarHtml(producer)}</div>` : ''}
+    ${scrumNote ? `<div class="card-status"><span style="color:var(--text3);font-size:8px">${scrumDate ? scrumDate+' — ' : ''}${scrumNote}</span></div>` : ''}
+  </div>`;
+}
+
+function buildBenchPill(item) {
+  const badgeCls = item.benchStatus === 'ON DECK' ? 'on-deck' : 'on-hold';
+  const note = item.scrumNote ? `${item.scrumDate ? item.scrumDate+' — ' : ''}${item.scrumNote}` : '';
+  return `<div class="bench-pill">
+    <div class="bench-pill-top">
+      <span class="bench-pill-name">${item.name}</span>
+      <span class="bench-pill-badge ${badgeCls}">${item.benchStatus}</span>
+    </div>
+    ${note ? `<div class="bench-pill-scrum">${note}</div>` : ''}
+  </div>`;
+}
+
+function buildCompletePill(item) {
+  const badgeCls = item.slaBadge.cls === 'done' ? 'done' : 'almost';
+  const label = item.slaBadge.label;
+  const note = item.scrumNote ? `${item.scrumDate ? item.scrumDate+' — ' : ''}${item.scrumNote}` : '';
+  const hasDetail = !!projects[item.id];
+  return `<div class="bench-pill complete-pill"${hasDetail ? ` onclick="openModal('${item.id}')"` : ''}>
+    <div class="bench-pill-top">
+      <span class="bench-pill-name">${item.name}</span>
+      <span class="bench-pill-badge ${badgeCls}">${label}</span>
+    </div>
+    ${note ? `<div class="bench-pill-scrum">${note}</div>` : ''}
+  </div>`;
+}
+
+function applyLiveData(data) {
+  // Update each workflow column
+  Object.entries(COLUMN_IDS).forEach(([colName, colId]) => {
+    const col = document.getElementById(colId);
+    if (!col) return;
+    const cards = (data.columns[colName] || []);
+    const header = col.querySelector('.col-header');
+    if (header) {
+      const meta = header.querySelector('.col-meta');
+      if (meta) meta.textContent = `${cards.length} project${cards.length !== 1 ? 's' : ''}`;
+    }
+    const cardsEl = col.querySelector('.col-cards');
+    if (!cardsEl) return;
+    if (cards.length === 0) {
+      cardsEl.innerHTML = '<div class="col-empty">— NO ACTIVE PROJECTS —</div>';
+    } else {
+      cardsEl.innerHTML = cards.map(buildCard).join('');
+    }
+  });
+
+  // Update bench panel
+  const benchPanel = document.getElementById('panel-bench');
+  if (benchPanel) {
+    const inner = benchPanel.querySelector('.drawer-inner');
+    if (inner && data.bench.length > 0) {
+      inner.innerHTML = data.bench.map(buildBenchPill).join('');
+    }
+    const count = document.getElementById('bench-count');
+    if (count) count.textContent = data.bench.length;
+  }
+
+  // Update complete panel
+  const completePanel = document.getElementById('panel-complete');
+  if (completePanel) {
+    const inner = completePanel.querySelector('.drawer-inner');
+    if (inner && data.complete.length > 0) {
+      inner.innerHTML = data.complete.map(buildCompletePill).join('');
+    }
+    const count = document.getElementById('complete-count');
+    if (count) count.textContent = data.complete.length;
+  }
+
+  // Update live indicator
+  const liveEl = document.querySelector('.live-dot');
+  if (liveEl) {
+    const age = data.cacheAge || 0;
+    liveEl.title = `Last synced: ${age}s ago`;
+  }
+
+  liveDataLoaded = true;
+}
+
+async function fetchLiveData() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    applyLiveData(data);
+  } catch(e) {
+    if (!liveDataLoaded) {
+      console.warn('[LIVE] API unreachable, using hardcoded data:', e.message);
+    }
+  }
+}
+
+// Boot live sync
+fetchLiveData();
+setInterval(fetchLiveData, REFRESH_MS);
+
+// ── TABBED DRAWER ──
+function switchTab(tab) {
+  document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active','active-complete'));
+  document.querySelectorAll('.drawer-panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'bench') {
+    document.getElementById('tab-bench').classList.add('active');
+    document.getElementById('panel-bench').classList.add('active');
+  } else {
+    document.getElementById('tab-complete').classList.add('active','active-complete');
+    document.getElementById('panel-complete').classList.add('active');
+  }
+}
+
+</script>
+</body>
+</html>
