@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 7341;
 
 const COLUMNS = [
   'Creative Brief', 'LookDev', 'Storyboard', 'Animatic',
-  'Rough Cut', 'Fine Cut', 'Final Delivery', 'Complete'
+  'Rough Cut', 'Fine Cut', 'Final Delivery'
 ];
 
 // ── Lookup tables ──────────────────────────────────────────────
@@ -208,6 +208,8 @@ async function buildBoardData() {
         ...card,
         benchStatus: status === 'ON HOLD' ? 'ON HOLD' : 'ON DECK',
       });
+    } else if (prodStatus === 'Complete') {
+      complete.push({ ...card, slaBadge: { label: 'DONE', cls: 'done' } });
     } else if (COLUMNS.includes(prodStatus)) {
       columns[prodStatus].push(card);
     }
