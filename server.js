@@ -23,6 +23,7 @@ const COLUMNS = [
 // ── Lookup tables ──────────────────────────────────────────────
 let teamMembers = {};   // recXXX → { name, initials, color }
 let clients = {};       // recXXX → companyName
+let artists = {};       // recXXX → { name, role, code }
 let cachedBoardData = null;
 let lastFetch = 0;
 
@@ -83,9 +84,10 @@ async function fetchAllRecords(tableName, params = '') {
 
 // ── Load lookup tables ─────────────────────────────────────────
 async function loadLookups() {
-  const [teamRecs, clientRecs] = await Promise.all([
+  const [teamRecs, clientRecs, artistRecs] = await Promise.all([
     fetchAllRecords('Team Members'),
-    fetchAllRecords('Clients')
+    fetchAllRecords('Clients'),
+    fetchAllRecords('Artists'),
   ]);
   teamRecs.forEach(r => {
     const name = r.fields['Full Name'] || '?';
@@ -94,7 +96,15 @@ async function loadLookups() {
   clientRecs.forEach(r => {
     clients[r.id] = r.fields['Company Name'] || '?';
   });
-  console.log(`[INIT] Loaded ${Object.keys(teamMembers).length} team members, ${Object.keys(clients).length} clients`);
+  artistRecs.forEach(r => {
+    const name = r.fields['Artist Name'] || '?';
+    artists[r.id] = {
+      name,
+      role: r.fields['Artist Role'] || 'Artist',
+      code: r.fields['Code'] || initials(name),
+    };
+  });
+  console.log(`[INIT] Loaded ${Object.keys(teamMembers).length} team members, ${Object.keys(clients).length} clients, ${Object.keys(artists).length} artists`);
 }
 
 // ── SLA helpers ───────────────────────────────────────────────
@@ -174,6 +184,10 @@ async function buildBoardData() {
     const scrumNote = scrumFirst(scrum);
     const scrumDt = scrumDate(scrum);
 
+    // Resolve artists
+    const artistIds = f['Artist(s)'] || [];
+    const artistList = artistIds.map(aid => artists[aid]).filter(Boolean);
+
     const card = {
       id: r.id,
       name: f['Project Name'] || 'Untitled',
@@ -189,6 +203,8 @@ async function buildBoardData() {
       projectType: Array.isArray(f['Project Type']) ? f['Project Type'][0] : (f['Project Type'] || ''),
       invoiceStatus: f['Invoice Status'] || '',
       finalDelivery: f['Final Delivery (Actual)'] || null,
+      driveLink: f['Data Link'] || null,
+      artists: artistList,
     };
 
     if (!prodStatus || prodStatus === '') {

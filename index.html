@@ -889,6 +889,8 @@ const tickerItems = [
 })();
 
 // ── PROJECT DATA ──
+const liveCards = {}; // populated by buildCard() from live AirTable data
+
 const projects = {
   'gogo-soccer': {
     title: 'GoGo Yogurt — Soccer',
@@ -1014,43 +1016,90 @@ const projects = {
 // ── MODAL ──
 function openModal(id) {
   const p = projects[id];
-  if(!p) return;
+  const live = liveCards[id];
+  if (!p && !live) return;
+
   const modal = document.getElementById('modal');
-  modal.className = 'modal ' + (p.cardClass || '');
 
-  document.getElementById('modal-title').textContent = p.title;
-  document.getElementById('modal-job').textContent = p.job;
-  document.getElementById('modal-client').textContent = p.client;
+  if (p) {
+    // ── Hardcoded project data ──
+    modal.className = 'modal ' + (p.cardClass || '');
+    document.getElementById('modal-title').textContent = p.title;
+    document.getElementById('modal-job').textContent = p.job;
+    document.getElementById('modal-client').textContent = p.client;
+    document.getElementById('modal-sla-row').innerHTML = p.sla.map(s=>
+      `<div class="modal-sla-block"><div class="modal-sla-label">${s.label}</div><div class="modal-sla-val" style="color:${s.color}">${s.val}</div></div>`
+    ).join('');
+    const teamHtml = p.team.length
+      ? p.team.map(m=>`
+          <div class="team-member">
+            <div class="team-avatar" style="background:${m.bg};color:${m.color}">${m.initials}</div>
+            <div class="team-info"><div class="team-name">${m.name}</div><div class="team-role">${m.role}</div></div>
+            <div class="team-badge ${m.badge}">${m.badge.toUpperCase()}</div>
+          </div>`).join('')
+      : '<div style="color:var(--text3);font-size:10px;grid-column:span 2;padding:8px 0">No team data available</div>';
+    document.getElementById('modal-team').innerHTML = teamHtml;
+    document.getElementById('modal-status').textContent = p.status;
+    document.getElementById('modal-next-label').textContent = p.nextLabel;
+    document.getElementById('modal-next-text').textContent = p.next;
+    document.getElementById('modal-links').innerHTML = p.links.map(l=>
+      l.url
+        ? `<a class="modal-link" href="${l.url}" target="_blank">${l.icon} ${l.label}</a>`
+        : `<span class="modal-link disabled">${l.icon} ${l.label} — TBD</span>`
+    ).join('');
 
-  // SLA blocks
-  document.getElementById('modal-sla-row').innerHTML = p.sla.map(s=>
-    `<div class="modal-sla-block"><div class="modal-sla-label">${s.label}</div><div class="modal-sla-val" style="color:${s.color}">${s.val}</div></div>`
-  ).join('');
+  } else {
+    // ── Live AirTable data ──
+    modal.className = 'modal ' + (live.cardClass || '');
+    document.getElementById('modal-title').textContent = live.name;
+    document.getElementById('modal-job').textContent = [live.jobId, live.projectType].filter(Boolean).join(' · ');
+    document.getElementById('modal-client').textContent = live.client || '—';
 
-  // Team
-  const teamHtml = p.team.length
-    ? p.team.map(m=>`
-        <div class="team-member">
-          <div class="team-avatar" style="background:${m.bg};color:${m.color}">${m.initials}</div>
-          <div class="team-info">
-            <div class="team-name">${m.name}</div>
-            <div class="team-role">${m.role}</div>
-          </div>
-          <div class="team-badge ${m.badge}">${m.badge.toUpperCase()}</div>
-        </div>`).join('')
-    : '<div style="color:var(--text3);font-size:10px;grid-column:span 2;padding:8px 0">No team data available</div>';
-  document.getElementById('modal-team').innerHTML = teamHtml;
+    // SLA row
+    const slaBlocks = [];
+    if (live.slaDate) slaBlocks.push({ label: 'SLA DEADLINE', val: live.slaDate, color: live.slaBadge.cls === 'overdue' ? 'var(--overdue)' : live.slaBadge.cls === 'at-risk' ? 'var(--at-risk)' : 'var(--on-track)' });
+    if (live.slaDays !== null) slaBlocks.push({ label: 'DAYS REMAINING', val: live.slaBadge.label, color: live.slaBadge.cls === 'overdue' ? 'var(--overdue)' : live.slaBadge.cls === 'at-risk' ? 'var(--at-risk)' : 'var(--on-track)' });
+    if (live.finalDelivery) slaBlocks.push({ label: 'DELIVERED', val: live.finalDelivery, color: 'var(--complete)' });
+    if (live.invoiceStatus) slaBlocks.push({ label: 'INVOICE', val: live.invoiceStatus, color: 'var(--text2)' });
+    document.getElementById('modal-sla-row').innerHTML = slaBlocks.map(s=>
+      `<div class="modal-sla-block"><div class="modal-sla-label">${s.label}</div><div class="modal-sla-val" style="color:${s.color}">${s.val}</div></div>`
+    ).join('') || '<div style="color:var(--text3);font-size:10px">No SLA data</div>';
 
-  document.getElementById('modal-status').textContent = p.status;
-  document.getElementById('modal-next-label').textContent = p.nextLabel;
-  document.getElementById('modal-next-text').textContent = p.next;
+    // Team: producer + artists
+    const teamMembers = [];
+    if (live.producer) {
+      teamMembers.push(`<div class="team-member">
+        <div class="team-avatar" style="background:${live.producer.bg};color:${live.producer.fg}">${live.producer.initials}</div>
+        <div class="team-info"><div class="team-name">${live.producer.name}</div><div class="team-role">Producer</div></div>
+        <div class="team-badge prod">PROD</div>
+      </div>`);
+    }
+    if (live.artists && live.artists.length) {
+      live.artists.forEach(a => {
+        const ini = a.code || a.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        teamMembers.push(`<div class="team-member">
+          <div class="team-avatar" style="background:#1a3a5c;color:#00d4ff">${ini}</div>
+          <div class="team-info"><div class="team-name">${a.name}</div><div class="team-role">${a.role}</div></div>
+          <div class="team-badge artist">ARTIST</div>
+        </div>`);
+      });
+    }
+    document.getElementById('modal-team').innerHTML = teamMembers.length
+      ? teamMembers.join('')
+      : '<div style="color:var(--text3);font-size:10px;grid-column:span 2;padding:8px 0">No team data in AirTable</div>';
 
-  // Links
-  document.getElementById('modal-links').innerHTML = p.links.map(l=>
-    l.url
-      ? `<a class="modal-link" href="${l.url}" target="_blank">${l.icon} ${l.label}</a>`
-      : `<span class="modal-link disabled">${l.icon} ${l.label} — TBD</span>`
-  ).join('');
+    // Status / next step from SCRUM note
+    const scrumFull = live.scrumNote || '';
+    document.getElementById('modal-status').textContent = scrumFull || 'No status note — check AirTable SCRUM field.';
+    document.getElementById('modal-next-label').textContent = '▶ SCRUM NOTE';
+    document.getElementById('modal-next-text').textContent = scrumFull || '—';
+
+    // Links
+    const links = [];
+    if (live.driveLink) links.push(`<a class="modal-link" href="${live.driveLink}" target="_blank">📁 Drive Folder</a>`);
+    links.push(`<span class="modal-link disabled">🎬 Frame.io — TBD</span>`);
+    document.getElementById('modal-links').innerHTML = links.join('');
+  }
 
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1150,10 +1199,10 @@ function buildCard(card) {
   const { id, name, jobId, client, producer, slaBadge, cardClass, scrumNote, scrumDate } = card;
   const badgeCls = slaBadge.cls || 'on-track';
   const cls = cardClass || '';
-  const hasDetail = !!projects[id];
+  liveCards[id] = card; // store for modal lookup
 
-  return `<div class="card${cls ? ' '+cls : ''}${hasDetail ? '' : ''}" onclick="${hasDetail ? `openModal('${id}')` : ''}">
-    ${hasDetail ? '<span class="card-click-hint">CLICK FOR DETAILS</span>' : ''}
+  return `<div class="card${cls ? ' '+cls : ''}" onclick="openModal('${id}')">
+    <span class="card-click-hint">CLICK FOR DETAILS</span>
     <div class="card-top">
       <div class="card-name">${name}</div>
       <div class="sla-badge ${badgeCls}">${slaBadge.label}</div>
