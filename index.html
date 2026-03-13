@@ -941,19 +941,62 @@
 
 <script>
 // ── CAT BOMB ──
+let _catQueue = []; // pre-fetched blob URLs ready to display
+
+function _prefetchCat() {
+  const bust = Date.now() + Math.random();
+  const url = `https://cataas.com/cat/gif?bust=${bust}`;
+  fetch(url)
+    .then(r => r.blob())
+    .then(blob => { _catQueue.push(URL.createObjectURL(blob)); })
+    .catch(() => {}); // silently ignore errors
+}
+
+// Pre-load 2 cats on page boot so first click is instant
+_prefetchCat();
+_prefetchCat();
+
 function loadCat() {
   const img = document.getElementById('cat-gif');
-  img.style.opacity = '0';
-  img.style.transition = 'opacity 0.2s';
-  // Cache-bust so we always get a fresh random cat
-  const bust = Date.now();
-  img.onload = () => { img.style.opacity = '1'; };
-  img.onerror = () => {
-    // Fallback to The Cat API if cataas is down
-    img.src = `https://api.thecatapi.com/v1/images/search?format=src&mime_types=gif&bust=${bust}`;
-  };
-  img.src = `https://cataas.com/cat/gif?bust=${bust}`;
+  const body = img.parentElement;
+
+  if (_catQueue.length > 0) {
+    // Instant — already downloaded
+    const objectUrl = _catQueue.shift();
+    img.style.opacity = '0';
+    img.style.transition = 'opacity 0.25s';
+    img.onload = () => { img.style.opacity = '1'; body.querySelector('.cat-loading') && body.querySelector('.cat-loading').remove(); };
+    img.src = objectUrl;
+    img.style.display = 'block';
+    // Start fetching the next one in the background immediately
+    _prefetchCat();
+  } else {
+    // Fallback: fetch on demand + show spinner
+    img.style.display = 'none';
+    if (!body.querySelector('.cat-loading')) {
+      const spinner = document.createElement('div');
+      spinner.className = 'cat-loading';
+      spinner.textContent = '🐱 fetching cat...';
+      body.appendChild(spinner);
+    }
+    const bust = Date.now();
+    fetch(`https://cataas.com/cat/gif?bust=${bust}`)
+      .then(r => r.blob())
+      .then(blob => {
+        const objectUrl = URL.createObjectURL(blob);
+        body.querySelector('.cat-loading') && body.querySelector('.cat-loading').remove();
+        img.style.opacity = '0';
+        img.onload = () => { img.style.opacity = '1'; };
+        img.src = objectUrl;
+        img.style.display = 'block';
+        _prefetchCat(); // queue next
+      })
+      .catch(() => {
+        body.querySelector('.cat-loading') && (body.querySelector('.cat-loading').textContent = '😿 cat failed to load — try again');
+      });
+  }
 }
+
 function catBomb() {
   document.getElementById('cat-modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
