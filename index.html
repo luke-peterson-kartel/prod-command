@@ -551,6 +551,54 @@
   .legend-dot.green { background: var(--on-track); box-shadow: 0 0 4px var(--on-track); }
   .legend-dot.amber { background: var(--at-risk); }
   .legend-dot.red { background: var(--overdue); }
+
+  /* ── CAT BOMB ── */
+  .cat-bomb-btn {
+    background: linear-gradient(135deg, #ff6b9d, #ff9a3c);
+    color: #fff; border: none; border-radius: 4px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.1em;
+    padding: 5px 10px; cursor: pointer; white-space: nowrap;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 0 10px rgba(255,107,157,0.4);
+  }
+  .cat-bomb-btn:hover { transform: scale(1.05); box-shadow: 0 0 18px rgba(255,107,157,0.7); }
+  .cat-bomb-btn:active { transform: scale(0.97); }
+  .cat-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 2000;
+    align-items: center; justify-content: center;
+  }
+  .cat-modal-overlay.open { display: flex; }
+  .cat-modal {
+    background: #111827; border: 1px solid #ff6b9d;
+    border-radius: 12px; overflow: hidden;
+    max-width: 500px; width: 90%;
+    box-shadow: 0 0 40px rgba(255,107,157,0.3);
+    animation: catPop 0.2s ease-out;
+  }
+  @keyframes catPop {
+    from { transform: scale(0.8); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .cat-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: linear-gradient(135deg, rgba(255,107,157,0.15), rgba(255,154,60,0.1));
+    border-bottom: 1px solid rgba(255,107,157,0.2);
+  }
+  .cat-modal-title { font-size: 13px; font-weight: 800; color: #ff6b9d; letter-spacing: 0.1em; }
+  .cat-modal-close { background: none; border: none; color: var(--text3); font-size: 14px; cursor: pointer; padding: 2px 6px; }
+  .cat-modal-close:hover { color: #fff; }
+  .cat-modal-body { padding: 16px; display: flex; align-items: center; justify-content: center; min-height: 200px; }
+  .cat-modal-body img { max-width: 100%; max-height: 380px; border-radius: 8px; display: block; }
+  .cat-modal-body .cat-loading { color: var(--text3); font-size: 11px; }
+  .cat-modal-footer { padding: 12px 16px; display: flex; justify-content: center; border-top: 1px solid rgba(255,107,157,0.1); }
+  .cat-another-btn {
+    background: linear-gradient(135deg, #ff6b9d, #ff9a3c);
+    color: #fff; border: none; border-radius: 4px;
+    font-size: 11px; font-weight: 700; padding: 7px 20px; cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .cat-another-btn:hover { transform: scale(1.04); }
   .legend-dot.complete { background: var(--complete); box-shadow: 0 0 4px var(--complete); }
   .ticker-scroll { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
   .ticker-inner { display: flex; align-items: center; white-space: nowrap; animation: scroll-left 30s linear infinite; }
@@ -610,6 +658,24 @@
   <div class="clock-block">
     <div class="clock glow-cyan" id="clock">--:--:--</div>
     <div class="clock-date" id="clock-date">--- --- --</div>
+  </div>
+  <div class="header-divider"></div>
+  <button class="cat-bomb-btn" onclick="catBomb()" title="Cat Bomb">🐱 CAT BOMB</button>
+</div>
+
+<!-- ── CAT BOMB MODAL ── -->
+<div class="cat-modal-overlay" id="cat-modal-overlay" onclick="closeCatBomb(event)">
+  <div class="cat-modal">
+    <div class="cat-modal-header">
+      <span class="cat-modal-title">🐱 CAT BOMB</span>
+      <button class="cat-modal-close" onclick="closeCatBombBtn()">✕</button>
+    </div>
+    <div class="cat-modal-body">
+      <img id="cat-gif" src="" alt="random cat" />
+    </div>
+    <div class="cat-modal-footer">
+      <button class="cat-another-btn" onclick="loadCat()">Another Cat 🐾</button>
+    </div>
   </div>
 </div>
 
@@ -869,6 +935,33 @@
 </div>
 
 <script>
+// ── CAT BOMB ──
+function loadCat() {
+  const img = document.getElementById('cat-gif');
+  img.style.opacity = '0';
+  img.style.transition = 'opacity 0.2s';
+  // Cache-bust so we always get a fresh random cat
+  const bust = Date.now();
+  img.onload = () => { img.style.opacity = '1'; };
+  img.onerror = () => {
+    // Fallback to The Cat API if cataas is down
+    img.src = `https://api.thecatapi.com/v1/images/search?format=src&mime_types=gif&bust=${bust}`;
+  };
+  img.src = `https://cataas.com/cat/gif?bust=${bust}`;
+}
+function catBomb() {
+  document.getElementById('cat-modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadCat();
+}
+function closeCatBombBtn() {
+  document.getElementById('cat-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeCatBomb(e) {
+  if (e.target === document.getElementById('cat-modal-overlay')) closeCatBombBtn();
+}
+
 // ── CLOCK ──
 function updateClock() {
   const now = new Date();
