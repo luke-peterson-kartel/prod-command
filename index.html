@@ -554,15 +554,15 @@
 
   /* ── CAT BOMB ── */
   .cat-bomb-btn {
-    background: linear-gradient(135deg, #ff6b9d, #ff9a3c);
-    color: #fff; border: none; border-radius: 4px;
-    font-size: 10px; font-weight: 800; letter-spacing: 0.1em;
-    padding: 5px 10px; cursor: pointer; white-space: nowrap;
-    transition: transform 0.1s, box-shadow 0.1s;
-    box-shadow: 0 0 10px rgba(255,107,157,0.4);
+    background: none; border: none;
+    color: var(--text3); opacity: 0.35;
+    padding: 4px 6px; cursor: pointer;
+    display: flex; align-items: center;
+    transition: opacity 0.2s, transform 0.15s;
+    border-radius: 4px;
   }
-  .cat-bomb-btn:hover { transform: scale(1.05); box-shadow: 0 0 18px rgba(255,107,157,0.7); }
-  .cat-bomb-btn:active { transform: scale(0.97); }
+  .cat-bomb-btn:hover { opacity: 0.7; transform: scale(1.15); }
+  .cat-bomb-btn:active { transform: scale(0.95); }
   .cat-modal-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.75); z-index: 2000;
@@ -660,7 +660,12 @@
     <div class="clock-date" id="clock-date">--- --- --</div>
   </div>
   <div class="header-divider"></div>
-  <button class="cat-bomb-btn" onclick="catBomb()" title="Cat Bomb">🐱 CAT BOMB</button>
+  <button class="cat-bomb-btn" onclick="catBomb()" title="">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-3 6c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm6 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-3 8.5c-2 0-3.7-1-4.5-2.5h9c-.8 1.5-2.5 2.5-4.5 2.5z"/>
+      <path d="M3 5L5 9M21 5L19 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </button>
 </div>
 
 <!-- ── CAT BOMB MODAL ── -->
