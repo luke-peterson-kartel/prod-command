@@ -1,12 +1,14 @@
 /**
  * PROD Command — AirTable Live Sync Server
  * Polls AirTable every 60s, serves /api/board-data
+ * Google OAuth 2.0 — restricts access to @kartel.ai accounts
  */
 
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
+const http    = require('http');
+const https   = require('https');
+const fs      = require('fs');
+const path    = require('path');
+const crypto  = require('crypto');
 
 const AT_KEY = process.env.AIRTABLE_KEY ||
   (() => { try { return fs.readFileSync(process.env.HOME + '/.config/airtable/api_key', 'utf8').trim(); } catch(e) { return ''; } })();
@@ -15,15 +17,151 @@ const TABLE_ID = 'tblCrQJIBuXscN4tq';
 const VIEW_ID  = 'viwAAn6Xd4o6yw1Tc';
 const PORT = process.env.PORT || 7341;
 
+// ── Google OAuth config ────────────────────────────────────────
+const GOOGLE_CLIENT_ID     = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+const BASE_URL             = process.env.BASE_URL || `http://localhost:${PORT}`;
+const ALLOWED_DOMAIN       = 'kartel.ai';
+const AUTH_ENABLED         = !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET);
+const SESSION_TTL_MS       = 8 * 60 * 60 * 1000; // 8 hours
+
+// ── Session store (in-memory) ──────────────────────────────────
+const sessions   = new Map(); // sessionId → { email, name, expires }
+const oauthState = new Map(); // state → { created }
+
+function genToken() { return crypto.randomBytes(32).toString('hex'); }
+
+function getSession(req) {
+  const cookie = req.headers.cookie || '';
+  const m = cookie.match(/prod_session=([a-f0-9]{64})/);
+  if (!m) return null;
+  const sess = sessions.get(m[1]);
+  if (!sess) return null;
+  if (Date.now() > sess.expires) { sessions.delete(m[1]); return null; }
+  return { ...sess, id: m[1] };
+}
+
+function setSessionCookie(res, sessionId) {
+  const secure = BASE_URL.startsWith('https') ? '; Secure' : '';
+  res.setHeader('Set-Cookie',
+    `prod_session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_MS / 1000}${secure}`);
+}
+
+function clearSessionCookie(res) {
+  res.setHeader('Set-Cookie', 'prod_session=; Path=/; HttpOnly; Max-Age=0');
+}
+
+// ── Google OAuth helpers ───────────────────────────────────────
+function googleAuthUrl(state) {
+  const params = new URLSearchParams({
+    client_id:     GOOGLE_CLIENT_ID,
+    redirect_uri:  `${BASE_URL}/auth/google/callback`,
+    response_type: 'code',
+    scope:         'openid email profile',
+    access_type:   'online',
+    state,
+    hd:            ALLOWED_DOMAIN, // hint: only show kartel.ai accounts
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+async function exchangeCode(code) {
+  const postData = new URLSearchParams({
+    code,
+    client_id:     GOOGLE_CLIENT_ID,
+    client_secret: GOOGLE_CLIENT_SECRET,
+    redirect_uri:  `${BASE_URL}/auth/google/callback`,
+    grant_type:    'authorization_code',
+  }).toString();
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'oauth2.googleapis.com',
+      path: '/token',
+      method: 'POST',
+      headers: {
+        'Content-Type':   'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData),
+      },
+    };
+    const req = https.request(options, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); } });
+    });
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
+  });
+}
+
+async function getUserInfo(accessToken) {
+  return new Promise((resolve, reject) => {
+    https.get({
+      hostname: 'www.googleapis.com',
+      path: '/oauth2/v2/userinfo',
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); } });
+    }).on('error', reject);
+  });
+}
+
+// ── Login page ─────────────────────────────────────────────────
+function loginPage(error = '') {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROD Command — Sign In</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e1a; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .card { background: #111827; border: 1px solid #1e2a3a; border-radius: 16px; padding: 48px 40px; text-align: center; max-width: 380px; width: 90%; }
+  .logo { font-size: 32px; margin-bottom: 8px; }
+  .title { font-size: 20px; font-weight: 700; color: #f0f4ff; margin-bottom: 4px; letter-spacing: 0.05em; }
+  .sub { font-size: 12px; color: #4a6080; margin-bottom: 32px; }
+  .btn { display: inline-flex; align-items: center; gap: 12px; background: #fff; color: #1a1a1a; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.9; }
+  .btn-icon { width: 20px; height: 20px; }
+  .error { margin-top: 20px; font-size: 12px; color: #ef4444; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; padding: 8px 12px; }
+  .domain { margin-top: 16px; font-size: 11px; color: #2a4060; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🟢</div>
+  <div class="title">KARTEL | PRODUCTION COMMAND</div>
+  <div class="sub">Internal use only</div>
+  <a href="/auth/google" class="btn">
+    <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Sign in with Google
+  </a>
+  ${error ? `<div class="error">${error}</div>` : ''}
+  <div class="domain">@kartel.ai accounts only</div>
+</div>
+</body>
+</html>`;
+}
+
+// ── AirTable columns ───────────────────────────────────────────
 const COLUMNS = [
   'Creative Brief', 'LookDev', 'Storyboard', 'Animatic',
   'Rough Cut', 'Fine Cut', 'Final Delivery'
 ];
 
 // ── Lookup tables ──────────────────────────────────────────────
-let teamMembers = {};   // recXXX → { name, initials, color }
-let clients = {};       // recXXX → companyName
-let artists = {};       // recXXX → { name, role, code }
+let teamMembers = {};
+let clients = {};
+let artists = {};
 let cachedBoardData = null;
 let lastFetch = 0;
 
@@ -37,72 +175,44 @@ const PRODUCER_COLORS = {
   'Rebecca Cook':         { bg: '#2a1a5c', fg: '#818cf8' },
 };
 
-function initials(name) {
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-}
+function initials(name) { return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
+function colorFor(name) { return PRODUCER_COLORS[name] || { bg: '#1a2a3a', fg: '#7a9bb5' }; }
 
-function colorFor(name) {
-  return PRODUCER_COLORS[name] || { bg: '#1a2a3a', fg: '#7a9bb5' };
-}
-
-// ── AirTable fetch helper ──────────────────────────────────────
-function atFetch(path) {
+// ── AirTable fetch ─────────────────────────────────────────────
+function atFetch(urlPath) {
   return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.airtable.com',
-      path: path,
-      headers: { 'Authorization': `Bearer ${AT_KEY}` }
-    };
-    https.get(options, res => {
+    https.get({ hostname: 'api.airtable.com', path: urlPath, headers: { 'Authorization': `Bearer ${AT_KEY}` } }, res => {
       let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch(e) { reject(e); }
-      });
+      res.on('data', c => data += c);
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); } });
     }).on('error', reject);
   });
 }
 
 async function fetchAllRecords(tableName, params = '') {
-  let records = [];
-  let offset = null;
+  let records = [], offset = null;
   do {
     const qs = new URLSearchParams();
     if (offset) qs.set('offset', offset);
-    if (params) {
-      const extra = new URLSearchParams(params);
-      for (const [k, v] of extra) qs.set(k, v);
-    }
-    const url = `/v0/${BASE_ID}/${encodeURIComponent(tableName)}?${qs}`;
-    const data = await atFetch(url);
+    if (params) { const extra = new URLSearchParams(params); for (const [k,v] of extra) qs.set(k,v); }
+    const data = await atFetch(`/v0/${BASE_ID}/${encodeURIComponent(tableName)}?${qs}`);
     records = records.concat(data.records || []);
     offset = data.offset;
   } while (offset);
   return records;
 }
 
-// ── Load lookup tables ─────────────────────────────────────────
 async function loadLookups() {
   const [teamRecs, clientRecs, artistRecs] = await Promise.all([
     fetchAllRecords('Team Members'),
     fetchAllRecords('Clients'),
     fetchAllRecords('Artists'),
   ]);
-  teamRecs.forEach(r => {
-    const name = r.fields['Full Name'] || '?';
-    teamMembers[r.id] = { name, initials: initials(name), ...colorFor(name) };
-  });
-  clientRecs.forEach(r => {
-    clients[r.id] = r.fields['Company Name'] || '?';
-  });
+  teamRecs.forEach(r => { const name = r.fields['Full Name'] || '?'; teamMembers[r.id] = { name, initials: initials(name), ...colorFor(name) }; });
+  clientRecs.forEach(r => { clients[r.id] = r.fields['Company Name'] || '?'; });
   artistRecs.forEach(r => {
     const name = r.fields['Artist Name'] || '?';
-    artists[r.id] = {
-      name,
-      role: r.fields['Artist Role'] || 'Artist',
-      code: r.fields['Code'] || initials(name),
-    };
+    artists[r.id] = { name, role: r.fields['Artist Role'] || 'Artist', code: r.fields['Code'] || initials(name) };
   });
   console.log(`[INIT] Loaded ${Object.keys(teamMembers).length} team members, ${Object.keys(clients).length} clients, ${Object.keys(artists).length} artists`);
 }
@@ -111,10 +221,8 @@ async function loadLookups() {
 function daysUntil(dateStr) {
   if (!dateStr) return null;
   const today = new Date(); today.setHours(0,0,0,0);
-  const due = new Date(dateStr + 'T00:00:00');
-  return Math.round((due - today) / 86400000);
+  return Math.round((new Date(dateStr + 'T00:00:00') - today) / 86400000);
 }
-
 function slaBadge(days) {
   if (days === null) return { label: '—', cls: '' };
   if (days < 0)  return { label: `${Math.abs(days)}d OVR`, cls: 'overdue' };
@@ -122,71 +230,45 @@ function slaBadge(days) {
   if (days <= 3)  return { label: `${days} days`, cls: 'at-risk' };
   return { label: `${days} days`, cls: 'on-track' };
 }
-
 function cardStatus(days) {
   if (days === null) return '';
-  if (days < 0)  return 'overdue';
-  if (days <= 3)  return 'at-risk';
+  if (days < 0) return 'overdue';
+  if (days <= 3) return 'at-risk';
   return '';
 }
-
-// ── Build SCRUM note (first non-empty line) ───────────────────
 function scrumFirst(note) {
   if (!note) return '';
-  const line = note.trim().split('\n').find(l => l.trim()) || '';
-  return line.replace(/^\d+\/\d+\s*[-–]\s*/, '').trim().slice(0, 120);
+  return (note.trim().split('\n').find(l => l.trim()) || '').replace(/^\d+\/\d+\s*[-–]\s*/, '').trim().slice(0, 120);
 }
-
 function scrumDate(note) {
   if (!note) return '';
   const m = note.trim().match(/^(\d+\/\d+)/);
   return m ? m[1] : '';
 }
 
-// ── Build board data from AirTable records ────────────────────
+// ── Build board data ───────────────────────────────────────────
 async function buildBoardData() {
-  const params = `view=${VIEW_ID}`;
-  const records = await fetchAllRecords(TABLE_ID, params);
-
-  const columns = {};
-  COLUMNS.forEach(c => columns[c] = []);
-
-  const bench = [];
-  const complete = [];
+  const records = await fetchAllRecords(TABLE_ID, `view=${VIEW_ID}`);
+  const columns = {}; COLUMNS.forEach(c => columns[c] = []);
+  const bench = [], complete = [];
 
   for (const r of records) {
     const f = r.fields;
     const prodStatus = f['Prod Status'];
     const status = f['Project Status'] || f['Status'] || '';
-
-    // Resolve producer
-    const producerIds = f['Producer'] || [];
-    const producerRec = producerIds[0] ? teamMembers[producerIds[0]] : null;
-
-    // Resolve company — fall back to parsing project name
+    const producerRec = (f['Producer'] || [])[0] ? teamMembers[(f['Producer'] || [])[0]] : null;
     const companyIds = f['Company'] || [];
     let clientName = companyIds[0] ? clients[companyIds[0]] : '';
     if (!clientName) {
-      // Try to extract client from "Client - Project Name" format
-      const pname = f['Project Name'] || '';
-      const parts = pname.split(/\s*[-–]\s*/);
-      clientName = parts.length > 1 ? parts[0].trim() : pname;
+      const parts = (f['Project Name'] || '').split(/\s*[-–]\s*/);
+      clientName = parts.length > 1 ? parts[0].trim() : (f['Project Name'] || '');
     }
-
-    // SLA
     const slaDate = f['Final Delivery Due Date (SOW)'] || null;
     const days = daysUntil(slaDate);
     const badge = slaBadge(days);
     const cardCls = cardStatus(days);
-
-    // SCRUM note
     const scrum = f['SCRUM Status Note'] || '';
-    const scrumNote = scrumFirst(scrum);
-    const scrumDt = scrumDate(scrum);
-
-    // Resolve artists
-    const artistIds = f['Artist(s)'] || [];
-    const artistList = artistIds.map(aid => artists[aid]).filter(Boolean);
+    const artistList = (f['Artist(s)'] || []).map(aid => artists[aid]).filter(Boolean);
 
     const card = {
       id: r.id,
@@ -194,12 +276,8 @@ async function buildBoardData() {
       jobId: f['Project ID'] || '',
       client: clientName,
       producer: producerRec,
-      slaDate,
-      slaDays: days,
-      slaBadge: badge,
-      cardClass: cardCls,
-      scrumNote,
-      scrumDate: scrumDt,
+      slaDate, slaDays: days, slaBadge: badge, cardClass: cardCls,
+      scrumNote: scrumFirst(scrum), scrumDate: scrumDate(scrum),
       projectType: Array.isArray(f['Project Type']) ? f['Project Type'][0] : (f['Project Type'] || ''),
       invoiceStatus: f['Invoice Status'] || '',
       finalDelivery: f['Final Delivery (Actual)'] || null,
@@ -208,22 +286,11 @@ async function buildBoardData() {
     };
 
     if (!prodStatus || prodStatus === '') {
-      // No Prod Status set — use Project Status to place in Complete if applicable
-      if (status === 'Complete') {
-        complete.push({ ...card, slaBadge: { label: 'DONE', cls: 'done' } });
-      }
-      // ON HOLD / ON DECK without Prod Status → bench
-      else if (status === 'ON HOLD') {
-        bench.push({ ...card, benchStatus: 'ON HOLD' });
-      } else if (status === 'On Deck') {
-        bench.push({ ...card, benchStatus: 'ON DECK' });
-      }
-      // Otherwise skip (historical / no classification)
+      if (status === 'Complete')       complete.push({ ...card, slaBadge: { label: 'DONE', cls: 'done' } });
+      else if (status === 'ON HOLD')   bench.push({ ...card, benchStatus: 'ON HOLD' });
+      else if (status === 'On Deck')   bench.push({ ...card, benchStatus: 'ON DECK' });
     } else if (prodStatus === 'N/A') {
-      bench.push({
-        ...card,
-        benchStatus: status === 'ON HOLD' ? 'ON HOLD' : 'ON DECK',
-      });
+      bench.push({ ...card, benchStatus: status === 'ON HOLD' ? 'ON HOLD' : 'ON DECK' });
     } else if (prodStatus === 'Complete') {
       complete.push({ ...card, slaBadge: { label: 'DONE', cls: 'done' } });
     } else if (COLUMNS.includes(prodStatus)) {
@@ -231,27 +298,22 @@ async function buildBoardData() {
     }
   }
 
-  // Summary stats
   const allActive = Object.values(columns).flat();
-  const onTrack = allActive.filter(c => !c.cardClass || c.cardClass === 'on-track').length;
-  const atRisk  = allActive.filter(c => c.cardClass === 'at-risk').length;
-  const overdue = allActive.filter(c => c.cardClass === 'overdue').length;
-
   return {
     fetchedAt: new Date().toISOString(),
     stats: {
       activeEngagements: allActive.length,
-      onTrack, atRisk, overdue,
-      benchCount: bench.length,
+      onTrack:  allActive.filter(c => !c.cardClass || c.cardClass === 'on-track').length,
+      atRisk:   allActive.filter(c => c.cardClass === 'at-risk').length,
+      overdue:  allActive.filter(c => c.cardClass === 'overdue').length,
+      benchCount:    bench.length,
       completeCount: complete.length,
     },
-    columns,
-    bench,
-    complete,
+    columns, bench, complete,
   };
 }
 
-// ── Poll loop ─────────────────────────────────────────────────
+// ── Poll loop ──────────────────────────────────────────────────
 async function poll() {
   try {
     console.log('[POLL] Fetching AirTable data...');
@@ -264,13 +326,93 @@ async function poll() {
   setTimeout(poll, 60_000);
 }
 
-// ── HTTP server ───────────────────────────────────────────────
-const server = http.createServer((req, res) => {
+// ── HTTP server ────────────────────────────────────────────────
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', AUTH_ENABLED ? BASE_URL : '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // ── Auth routes ──────────────────────────────────────────────
+  if (url.pathname === '/auth/google') {
+    if (!AUTH_ENABLED) { res.writeHead(302, { Location: '/' }); res.end(); return; }
+    const state = genToken();
+    oauthState.set(state, { created: Date.now() });
+    setTimeout(() => oauthState.delete(state), 5 * 60 * 1000); // expire in 5min
+    res.writeHead(302, { Location: googleAuthUrl(state) });
+    res.end();
+    return;
+  }
+
+  if (url.pathname === '/auth/google/callback') {
+    if (!AUTH_ENABLED) { res.writeHead(302, { Location: '/' }); res.end(); return; }
+    const code  = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    const errParam = url.searchParams.get('error');
+
+    if (errParam || !code || !state || !oauthState.has(state)) {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(loginPage('Sign-in was cancelled or timed out. Please try again.'));
+      return;
+    }
+    oauthState.delete(state);
+
+    try {
+      const tokens   = await exchangeCode(code);
+      const userInfo = await getUserInfo(tokens.access_token);
+      const email    = userInfo.email || '';
+
+      if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(loginPage(`Access denied. Only @${ALLOWED_DOMAIN} accounts are permitted.`));
+        return;
+      }
+
+      const sessionId = genToken();
+      sessions.set(sessionId, { email, name: userInfo.name || email, expires: Date.now() + SESSION_TTL_MS });
+      setSessionCookie(res, sessionId);
+      console.log(`[AUTH] ✅ ${email} signed in`);
+      res.writeHead(302, { Location: '/' });
+      res.end();
+    } catch(e) {
+      console.error('[AUTH] OAuth error:', e.message);
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(loginPage('Authentication failed. Please try again.'));
+    }
+    return;
+  }
+
+  if (url.pathname === '/auth/logout') {
+    const sess = getSession(req);
+    if (sess) {
+      console.log(`[AUTH] ${sess.email} signed out`);
+      sessions.delete(sess.id);
+    }
+    clearSessionCookie(res);
+    res.writeHead(302, { Location: '/login' });
+    res.end();
+    return;
+  }
+
+  if (url.pathname === '/login') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(loginPage());
+    return;
+  }
+
+  // ── Auth gate ────────────────────────────────────────────────
+  if (AUTH_ENABLED && !getSession(req)) {
+    if (url.pathname === '/api/board-data') {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+    res.writeHead(302, { Location: '/login' });
+    res.end();
+    return;
+  }
+
+  // ── API ──────────────────────────────────────────────────────
   if (url.pathname === '/api/board-data') {
     if (!cachedBoardData) {
       res.writeHead(503, { 'Content-Type': 'application/json' });
@@ -282,22 +424,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Serve static files
-  let filePath = path.join(__dirname, url.pathname === '/' ? 'index.html' : url.pathname);
-  // Strip query string from file path
-  filePath = filePath.split('?')[0];
-
+  // ── Static files ─────────────────────────────────────────────
+  let filePath = path.join(__dirname, url.pathname === '/' ? 'index.html' : url.pathname).split('?')[0];
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
-    const ext = path.extname(filePath);
-    const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' }[ext] || 'text/plain';
+    const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' }[path.extname(filePath)] || 'text/plain';
     res.writeHead(200, { 'Content-Type': mime });
     res.end(data);
   });
 });
 
-// ── Boot ──────────────────────────────────────────────────────
+// ── Boot ───────────────────────────────────────────────────────
 (async () => {
+  if (AUTH_ENABLED) {
+    console.log(`[AUTH] 🔐 Google OAuth enabled — @${ALLOWED_DOMAIN} only`);
+    console.log(`[AUTH] Callback URL: ${BASE_URL}/auth/google/callback`);
+  } else {
+    console.log('[AUTH] ⚠️  No OAuth credentials — running without auth (set GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET to enable)');
+  }
   console.log('[BOOT] Loading lookup tables...');
   await loadLookups();
   console.log('[BOOT] Starting initial AirTable poll...');
@@ -305,6 +449,5 @@ const server = http.createServer((req, res) => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`[BOOT] ✅ PROD Command server running → http://localhost:${PORT}`);
     console.log(`[BOOT] 🌐 Local network → http://172.18.62.28:${PORT}`);
-    console.log(`[BOOT] API: http://172.18.62.28:${PORT}/api/board-data`);
   });
 })();
