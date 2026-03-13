@@ -406,13 +406,27 @@
     font-size: 10px; color: var(--text); line-height: 1.35; font-weight: 500;
   }
   .task-item.done .task-name { text-decoration: line-through; color: var(--text3); }
+  .task-meta {
+    display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap;
+  }
   .task-due {
-    display: flex; align-items: center; gap: 4px; margin-top: 3px;
+    display: flex; align-items: center; gap: 4px;
   }
   .task-due-label { font-size: 8px; color: var(--text3); }
   .task-due-val {
     font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 2px;
   }
+  .task-assignee {
+    display: flex; align-items: center; gap: 3px;
+    background: rgba(255,255,255,0.04); border-radius: 3px;
+    padding: 1px 5px 1px 2px; border: 1px solid rgba(255,255,255,0.07);
+  }
+  .task-assignee-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px; font-weight: 700; flex-shrink: 0;
+  }
+  .task-assignee-name { font-size: 8px; color: var(--text2); }
   .task-due-val.today { background: rgba(245,158,11,0.2); color: var(--at-risk); animation: blink 1.5s infinite; }
   .task-due-val.asap { background: rgba(239,68,68,0.15); color: var(--overdue); }
   .task-due-val.soon { background: rgba(245,158,11,0.12); color: var(--at-risk); }
@@ -1114,17 +1128,26 @@ function closeModal(e) {
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModalBtn(); });
 
 // ── TASK TRACKER ──
+const ASSIGNEES = {
+  'Wayan':     { initials:'WP', bg:'#0e7c5a', fg:'#00ff88' },
+  'Veronica':  { initials:'VD', bg:'#0e7c5a', fg:'#00ff88' },
+  'Estefania': { initials:'EG', bg:'#1a3a5c', fg:'#00d4ff' },
+  'Stuart':    { initials:'SA', bg:'#3a2a0e', fg:'#f59e0b' },
+  'Monica':    { initials:'MM', bg:'#5c1a6e', fg:'#d46cff' },
+  'Luke':      { initials:'LP', bg:'#2a1a5c', fg:'#818cf8' },
+};
+
 const tasks = [
-  { id:1, project:'Newell', projectColor:'#00ff88', projectBg:'rgba(0,255,136,0.12)', task:'Deliver sizzle video + brand deck to client', due:'TODAY', dueClass:'today' },
-  { id:2, project:'GoGo Running', projectColor:'#f59e0b', projectBg:'rgba(245,158,11,0.12)', task:'Client animatic approval — begin generation', due:'Mar 12 AM', dueClass:'today' },
-  { id:3, project:'GoGo Soccer', projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)', task:'Chase client script approval — blocker for 3/16', due:'ASAP', dueClass:'asap' },
-  { id:4, project:'Real Estate', projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)', task:'Request ProRes HQ master from Stuart', due:'Mar 12', dueClass:'soon' },
-  { id:5, project:'fal.ai', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)', task:'Wayan follow up w/ Luke + Ben on contract signing', due:'Mar 12', dueClass:'soon' },
-  { id:6, project:'LIDL', projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)', task:'Receive final video → archive → Handoff #4', due:'TBD', dueClass:'tbd' },
-  { id:7, project:'Treefort', projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)', task:'Confirm project status with Stuart — active or stale?', due:'ASAP', dueClass:'asap' },
-  { id:8, project:'Production', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)', task:'Finalize production contact list (artists, mixers, etc.)', due:'This week', dueClass:'normal' },
-  { id:9, project:'Frame.io', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)', task:'Review Frame.io materials with Estefania', due:'This week', dueClass:'normal' },
-  { id:10, project:'NEB #4', projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)', task:'Initiate Handoff #4 Closing Reports (Newell Bubba, Marc Jacobs, Masked Singer)', due:'This week', dueClass:'normal' },
+  { id:1,  project:'Newell',     projectColor:'#00ff88', projectBg:'rgba(0,255,136,0.12)',   task:'Deliver sizzle video + brand deck to client',                         due:'TODAY',     dueClass:'today',  assignee:'Veronica' },
+  { id:2,  project:'GoGo',       projectColor:'#f59e0b', projectBg:'rgba(245,158,11,0.12)',  task:'Client animatic approval — begin generation (Running)',                due:'ASAP',      dueClass:'asap',   assignee:'Veronica' },
+  { id:3,  project:'GoGo',       projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)',   task:'Chase client script approval — blocker for 3/16 (Soccer)',            due:'ASAP',      dueClass:'asap',   assignee:'Wayan' },
+  { id:4,  project:'Real Estate',projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Request ProRes HQ master from Stuart',                                due:'Mar 12',    dueClass:'soon',   assignee:'Wayan' },
+  { id:5,  project:'fal.ai',     projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Follow up w/ Luke + Ben on contract signing',                         due:'Mar 12',    dueClass:'soon',   assignee:'Wayan' },
+  { id:6,  project:'LIDL',       projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Receive final video → archive → Handoff #4',                          due:'TBD',       dueClass:'tbd',    assignee:'Veronica' },
+  { id:7,  project:'Treefort',   projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)',   task:'Confirm project status with Stuart — active or stale?',               due:'ASAP',      dueClass:'asap',   assignee:'Wayan' },
+  { id:8,  project:'Production', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Finalize production contact list (artists, mixers, etc.)',             due:'This week', dueClass:'normal', assignee:'Wayan' },
+  { id:9,  project:'Frame.io',   projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Review Frame.io materials with Estefania',                            due:'This week', dueClass:'normal', assignee:'Veronica' },
+  { id:10, project:'NEB #4',     projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Initiate Handoff #4 Closing Reports (Newell Bubba, Marc Jacobs, Masked Singer)', due:'This week', dueClass:'normal', assignee:'Estefania' },
 ];
 
 let completedCount = 0;
@@ -1141,19 +1164,30 @@ function renderTasks() {
     return;
   }
 
-  list.innerHTML = active.map(t => `
+  list.innerHTML = active.map(t => {
+    const a = t.assignee ? ASSIGNEES[t.assignee] : null;
+    const assigneeHtml = a
+      ? `<div class="task-assignee">
+           <div class="task-assignee-dot" style="background:${a.bg};color:${a.fg}">${a.initials}</div>
+           <span class="task-assignee-name">${t.assignee}</span>
+         </div>`
+      : '';
+    return `
     <div class="task-item" id="task-${t.id}" onclick="completeTask(${t.id})">
       <div class="task-checkbox"></div>
       <div class="task-content">
         <div class="task-project" style="color:${t.projectColor};background:${t.projectBg}">${t.project}</div>
         <div class="task-name">${t.task}</div>
-        <div class="task-due">
-          <span class="task-due-label">DUE</span>
-          <span class="task-due-val ${t.dueClass}">${t.due}</span>
+        <div class="task-meta">
+          <div class="task-due">
+            <span class="task-due-label">DUE</span>
+            <span class="task-due-val ${t.dueClass}">${t.due}</span>
+          </div>
+          ${assigneeHtml}
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function completeTask(id) {
