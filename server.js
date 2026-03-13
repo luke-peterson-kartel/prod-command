@@ -165,6 +165,79 @@ let artists = {};
 let cachedBoardData = null;
 let lastFetch = 0;
 
+// ── Recent moves tracker ───────────────────────────────────────
+const MOVES_FILE = path.join(__dirname, 'recent-moves.json');
+const MOVES_TTL_MS = 14 * 24 * 60 * 60 * 1000; // keep 14 days
+const MOVE_COLORS = {
+  'Complete':       '#818cf8',
+  'Final Delivery': '#f59e0b',
+  'Fine Cut':       '#00ff88',
+  'Rough Cut':      '#00ff88',
+  'Animatic':       '#00ff88',
+  'Storyboard':     '#00d4ff',
+  'LookDev':        '#00d4ff',
+  'Creative Brief': '#f59e0b',
+};
+
+let recentMoves = [];
+let prevPlacement = {}; // cardId → { col, name }
+let isFirstPoll = true;
+
+function loadMoves() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(MOVES_FILE, 'utf8'));
+    recentMoves = Array.isArray(raw) ? raw : [];
+    console.log(`[MOVES] Loaded ${recentMoves.length} recent moves from disk`);
+  } catch(e) {
+    // Pre-seed with known transitions so ticker isn't blank on first deploy
+    recentMoves = [
+      { name:'Newell - Outdoor Brands', from:'Final Delivery', to:'Complete',       date:'Mar 13', color:'#818cf8', ts: Date.now() },
+      { name:'NEB - Peptides "The Wolverine Stack"', from:'Final Delivery', to:'Complete', date:'Mar 13', color:'#818cf8', ts: Date.now() - 3600000 },
+      { name:'Kartel Real Estate Reel', from:'Fine Cut',       to:'Complete',       date:'Mar 11', color:'#818cf8', ts: Date.now() - 172800000 },
+      { name:'LIDL (2025-152)',          from:'Final Delivery', to:'Complete',       date:'Mar 11', color:'#818cf8', ts: Date.now() - 172800000 },
+      { name:'GoGo Running',             from:'Storyboard',     to:'Animatic',       date:'Mar 11', color:'#00ff88', ts: Date.now() - 172800000 },
+      { name:'GoGo Soccer',              from:'Storyboard',     to:'Creative Brief', date:'Mar 10', color:'#f59e0b', ts: Date.now() - 259200000 },
+      { name:'NEB Academy',              from:'Pre-Production', to:'Rough Cut',      date:'Mar 11', color:'#00ff88', ts: Date.now() - 172800000 },
+      { name:'Newell Outdoor',           from:'Post-Production','to':'Final Delivery',date:'Mar 10',color:'#f59e0b', ts: Date.now() - 259200000 },
+    ];
+    saveMoves();
+  }
+}
+
+function saveMoves() {
+  try { fs.writeFileSync(MOVES_FILE, JSON.stringify(recentMoves), 'utf8'); } catch(e) {}
+}
+
+function trackMoves(columns, complete) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  // Build current placement map
+  const current = {};
+  for (const [col, cards] of Object.entries(columns)) {
+    for (const card of cards) current[card.id] = { col, name: card.name };
+  }
+  for (const card of complete) current[card.id] = { col: 'Complete', name: card.name };
+
+  if (!isFirstPoll) {
+    for (const [id, cur] of Object.entries(current)) {
+      const prev = prevPlacement[id];
+      if (prev && prev.col !== cur.col) {
+        const color = MOVE_COLORS[cur.col] || '#7a9bb5';
+        recentMoves.unshift({ name: cur.name, from: prev.col, to: cur.col, date: dateStr, color, ts: now.getTime() });
+        console.log(`[MOVES] ${cur.name}: ${prev.col} → ${cur.col}`);
+      }
+    }
+    // Prune old entries
+    const cutoff = now.getTime() - MOVES_TTL_MS;
+    recentMoves = recentMoves.filter(m => m.ts >= cutoff).slice(0, 30);
+    saveMoves();
+  }
+
+  prevPlacement = current;
+  isFirstPoll = false;
+}
+
 const PRODUCER_COLORS = {
   'Veronica Diaz':        { bg: '#0e7c5a', fg: '#00ff88' },
   'Monica Monique':       { bg: '#5c1a6e', fg: '#d46cff' },
@@ -298,9 +371,20 @@ async function buildBoardData() {
     }
   }
 
+  // Sort complete: most recent first (finalDelivery date, fall back to slaDate)
+  complete.sort((a, b) => {
+    const da = a.finalDelivery || a.slaDate || '';
+    const db = b.finalDelivery || b.slaDate || '';
+    return db.localeCompare(da);
+  });
+
+  // Track column transitions
+  trackMoves(columns, complete);
+
   const allActive = Object.values(columns).flat();
   return {
     fetchedAt: new Date().toISOString(),
+    recentMoves: [...recentMoves],
     stats: {
       activeEngagements: allActive.length,
       onTrack:  allActive.filter(c => !c.cardClass || c.cardClass === 'on-track').length,
@@ -444,6 +528,7 @@ const server = http.createServer(async (req, res) => {
   }
   console.log('[BOOT] Loading lookup tables...');
   await loadLookups();
+  loadMoves();
   console.log('[BOOT] Starting initial AirTable poll...');
   await poll().catch(console.error);
   server.listen(PORT, '0.0.0.0', () => {

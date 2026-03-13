@@ -178,7 +178,7 @@
   .card:hover .card-click-hint { opacity: 1; }
 
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
-  .card-name { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1.3; flex: 1; padding-right: 24px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .card-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; flex: 1; padding-right: 24px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .sla-badge {
     font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
     padding: 2px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
@@ -190,20 +190,20 @@
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
 
-  .card-job { font-size: 8px; color: var(--text3); margin-bottom: 3px; }
-  .card-client { font-size: 8px; color: var(--accent2); margin-bottom: 5px; opacity: 0.8; }
+  .card-job { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+  .card-client { font-size: 10px; color: var(--accent2); margin-bottom: 5px; opacity: 0.8; }
 
   /* Producer row on card — compact */
   .card-producer {
     display: flex; align-items: center; gap: 5px; margin-bottom: 5px;
   }
-  .producer-label { font-size: 8px; color: var(--text3); letter-spacing: 0.08em; }
+  .producer-label { font-size: 9px; color: var(--text3); letter-spacing: 0.08em; }
   .avatar-circle {
     width: 18px; height: 18px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 7px; font-weight: 800; flex-shrink: 0;
   }
-  .avatar-name { font-size: 9px; color: var(--text2); }
+  .avatar-name { font-size: 10px; color: var(--text2); }
 
   /* Artist count pill */
   .artist-pill {
@@ -217,12 +217,12 @@
   .artist-pill-icon { font-size: 10px; }
 
   .card-status {
-    font-size: 8px; color: var(--text2); line-height: 1.4; margin-bottom: 5px;
+    font-size: 10px; color: var(--text2); line-height: 1.4; margin-bottom: 5px;
     border-left: 2px solid rgba(255,255,255,0.06); padding-left: 6px;
   }
   .card-next { background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.1); border-radius: 3px; padding: 4px 6px; }
-  .card-next-label { font-size: 8px; color: var(--accent); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 2px; }
-  .card-next-text { font-size: 8px; color: var(--text2); line-height: 1.4; }
+  .card-next-label { font-size: 9px; color: var(--accent); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 2px; }
+  .card-next-text { font-size: 9px; color: var(--text2); line-height: 1.4; }
   .card.at-risk .card-next { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.15); }
   .card.at-risk .card-next-label { color: var(--at-risk); }
   .card.overdue .card-next { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2); }
@@ -575,7 +575,7 @@
   <div class="header-divider"></div>
   <div class="closest">
     <div class="closest-label">▲ CLOSEST TO DEADLINE</div>
-    <div class="closest-items">
+    <div class="closest-items" id="closest-items">
       <div class="closest-item">
         <span class="closest-rank">#1</span>
         <span class="closest-name">Newell Outdoor</span>
@@ -604,7 +604,7 @@
     <div class="header-divider" style="height:28px"></div>
     <div class="metric"><div class="metric-val cyan">3</div><div class="metric-label">CAPACITY<br>SLOTS</div></div>
     <div class="header-divider" style="height:28px"></div>
-    <div class="metric"><div class="metric-val" style="color:var(--overdue)">2</div><div class="metric-label">OVERDUE<br>ITEMS</div></div>
+    <div class="metric"><div class="metric-val" id="stat-overdue" style="color:var(--overdue)">2</div><div class="metric-label">OVERDUE<br>ITEMS</div></div>
   </div>
   <div class="header-divider"></div>
   <div class="clock-block">
@@ -626,7 +626,7 @@
 <div class="info-strip">
   <div class="info-block">
     <div class="info-block-label">⏱ Deadlines</div>
-    <div class="info-deadlines">
+    <div class="info-deadlines" id="info-deadlines">
       <div class="info-deadline-item"><span class="info-deadline-name">Newell Outdoor</span><span class="info-deadline-badge amber">TODAY</span></div>
       <div class="info-deadline-item"><span class="info-deadline-name">GoGo Running (CTV)</span><span class="info-deadline-badge amber">Mar 13 · 2d</span></div>
       <div class="info-deadline-item"><span class="info-deadline-name">NEB Academy</span><span class="info-deadline-badge green">Mar 20 · 9d</span></div>
@@ -883,24 +883,27 @@ function updateClock() {
 updateClock(); setInterval(updateClock, 1000);
 
 // ── TICKER ──
-const tickerItems = [
-  {name:'Kartel Real Estate',from:'Fine Cut',to:'Complete',date:'Mar 11',color:'#818cf8'},
-  {name:'LIDL (2025-152)',from:'Final Delivery',to:'Complete',date:'Mar 11',color:'#818cf8'},
-  {name:'GoGo Running',from:'Storyboard',to:'Animatic',date:'Mar 11',color:'#00ff88'},
-  {name:'GoGo Soccer',from:'Storyboard',to:'Creative Brief',date:'Mar 10',color:'#f59e0b'},
-  {name:'NEB Academy',from:'Pre-Production',to:'Rough Cut',date:'Mar 11',color:'#00ff88'},
-  {name:'Newell Outdoor',from:'Post-Production',to:'Final Delivery',date:'Mar 10',color:'#f59e0b'},
-  {name:'Treefort Test Shoot',from:'Production',to:'Final Delivery',date:'Feb 17',color:'#ef4444'},
-];
-(function buildTicker(){
+function buildTicker(items) {
   const inner = document.getElementById('ticker-inner');
-  let html='';
-  for(let i=0;i<2;i++) tickerItems.forEach(item=>{
-    html+=`<div class="ticker-item"><span style="color:${item.color};font-weight:600">${item.name}</span><span style="color:var(--text3)"> · </span><span>${item.from}</span><span class="t-arrow"> → </span><span style="color:var(--text)">${item.to}</span><span style="color:var(--text3)"> · </span><span style="color:var(--text3)">${item.date}</span></div>`;
+  if (!inner) return;
+  if (!items || items.length === 0) {
+    inner.innerHTML = '<div class="ticker-item" style="color:var(--text3)">No recent moves — board is stable</div>';
+    inner.style.animationDuration = '20s';
+    return;
+  }
+  let html = '';
+  // Duplicate for seamless loop
+  for (let i = 0; i < 2; i++) items.forEach(item => {
+    html += `<div class="ticker-item"><span style="color:${item.color};font-weight:600">${item.name}</span><span style="color:var(--text3)"> · </span><span>${item.from}</span><span class="t-arrow"> → </span><span style="color:var(--text)">${item.to}</span><span style="color:var(--text3)"> · </span><span style="color:var(--text3)">${item.date}</span></div>`;
   });
-  inner.innerHTML=html;
-  inner.style.animationDuration=(inner.scrollWidth/2/60)+'s';
-})();
+  inner.innerHTML = html;
+  // Recalculate scroll speed after render
+  requestAnimationFrame(() => {
+    inner.style.animationDuration = (inner.scrollWidth / 2 / 60) + 's';
+  });
+}
+// Boot with empty ticker; applyLiveData will populate it
+buildTicker([]);
 
 // ── PROJECT DATA ──
 const liveCards = {}; // populated by buildCard() from live AirTable data
@@ -1229,11 +1232,36 @@ function avatarHtml(producer) {
           <span class="avatar-name">${name}</span><span class="producer-label">PROD</span>`;
 }
 
+// Next step text by column phase
+const PHASE_NEXT = {
+  'Creative Brief':  'Finalize brief and get client sign-off → begin LookDev',
+  'LookDev':         'Complete LookDev boards → present to client for approval',
+  'Storyboard':      'Complete storyboard / keyframes → deliver for client review',
+  'Animatic':        'Deliver animatic to client → await approval to begin generation',
+  'Rough Cut':       'Complete rough cut → deliver for internal review',
+  'Fine Cut':        'Finalize cut → prepare deliverables for final delivery',
+  'Final Delivery':  'Prepare and deliver final assets to client',
+};
+
 function buildCard(card) {
-  const { id, name, jobId, client, producer, slaBadge, cardClass, scrumNote, scrumDate } = card;
+  const { id, name, jobId, client, producer, slaBadge, cardClass, scrumNote, scrumDate, artists, _col } = card;
   const badgeCls = slaBadge.cls || 'on-track';
   const cls = cardClass || '';
-  liveCards[id] = card; // store for modal lookup
+  liveCards[id] = card;
+
+  // Artists pill
+  const artistsHtml = artists && artists.length
+    ? `<div class="artist-pill" onclick="event.stopPropagation();openModal('${id}')"><span class="artist-pill-icon">👥</span>${artists.length} artist${artists.length !== 1 ? 's' : ''}</div>`
+    : '';
+
+  // Status text
+  const statusText = scrumNote ? `${scrumDate ? scrumDate + ' — ' : ''}${scrumNote}` : '';
+
+  // Next step label + text
+  let nextLabel = '▶ NEXT STEP';
+  if (badgeCls === 'overdue') nextLabel = '🔴 NEXT STEP';
+  else if (badgeCls === 'at-risk' || badgeCls === 'today') nextLabel = '⚡ NEXT STEP';
+  const nextText = PHASE_NEXT[_col] || 'See card details for next steps';
 
   return `<div class="card${cls ? ' '+cls : ''}" onclick="openModal('${id}')">
     <span class="card-click-hint">CLICK FOR DETAILS</span>
@@ -1243,8 +1271,9 @@ function buildCard(card) {
     </div>
     <div class="card-job">${jobId}</div>
     <div class="card-client">${client}</div>
-    ${producer ? `<div class="card-producer">${avatarHtml(producer)}</div>` : ''}
-    ${scrumNote ? `<div class="card-status"><span style="color:var(--text3);font-size:8px">${scrumDate ? scrumDate+' — ' : ''}${scrumNote}</span></div>` : ''}
+    ${producer ? `<div class="card-producer">${avatarHtml(producer)}${artistsHtml}</div>` : ''}
+    ${statusText ? `<div class="card-status">${statusText}</div>` : ''}
+    <div class="card-next"><div class="card-next-label">${nextLabel}</div><div class="card-next-text">${nextText}</div></div>
   </div>`;
 }
 
@@ -1316,11 +1345,75 @@ function applyLiveData(data) {
     if (count) count.textContent = data.complete.length;
   }
 
-  // Update live indicator
+  // ── Overdue count ──
+  const overdueEl = document.getElementById('stat-overdue');
+  if (overdueEl) overdueEl.textContent = data.stats.overdue;
+
+  // ── Build sorted active card list ──
+  const allActiveCards = Object.entries(data.columns).flatMap(([colName, cards]) =>
+    cards.map(c => ({ ...c, _col: colName }))
+  );
+  allActiveCards.sort((a, b) => {
+    if (a.slaDays === null && b.slaDays === null) return 0;
+    if (a.slaDays === null) return 1;
+    if (b.slaDays === null) return -1;
+    return a.slaDays - b.slaDays;
+  });
+
+  // ── Closest to deadline strip ──
+  const closestEl = document.getElementById('closest-items');
+  if (closestEl && allActiveCards.length) {
+    const top3 = allActiveCards.filter(c => c.slaDate).slice(0, 3);
+    closestEl.innerHTML = top3.map((card, i) => {
+      const badge = card.slaBadge;
+      let color = 'var(--on-track)';
+      if (badge.cls === 'overdue') color = 'var(--overdue)';
+      else if (badge.cls === 'at-risk' || badge.cls === 'today') color = 'var(--at-risk)';
+      const shortName = card.name.length > 22 ? card.name.slice(0, 20) + '…' : card.name;
+      return `<div class="closest-item">
+        <span class="closest-rank">#${i + 1}</span>
+        <span class="closest-name">${shortName}</span>
+        <span class="closest-days" style="color:${color}">${badge.label}</span>
+        <span class="closest-stage">${card._col}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Info deadlines strip ──
+  const deadlinesEl = document.getElementById('info-deadlines');
+  if (deadlinesEl) {
+    const withDates = allActiveCards.filter(c => c.slaDate);
+    if (withDates.length) {
+      deadlinesEl.innerHTML = withDates.map(card => {
+        const badge = card.slaBadge;
+        let cls = 'green';
+        if (badge.cls === 'overdue') cls = 'red';
+        else if (badge.cls === 'at-risk' || badge.cls === 'today') cls = 'amber';
+        const shortName = card.name.length > 28 ? card.name.slice(0, 26) + '…' : card.name;
+        const dateStr = card.slaDate
+          ? new Date(card.slaDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : '';
+        const label = badge.cls === 'today' ? 'TODAY'
+          : badge.cls === 'overdue' ? badge.label
+          : `${dateStr} · ${badge.label}`;
+        return `<div class="info-deadline-item"><span class="info-deadline-name">${shortName}</span><span class="info-deadline-badge ${cls}">${label}</span></div>`;
+      }).join('');
+    }
+  }
+
+  // ── Ticker ──
+  if (data.recentMoves && data.recentMoves.length) {
+    buildTicker(data.recentMoves);
+  }
+
+  // ── Live indicator ──
   const liveEl = document.querySelector('.live-dot');
   if (liveEl) {
     const age = data.cacheAge || 0;
     liveEl.title = `Last synced: ${age}s ago`;
+    liveEl.textContent = `LIVE`;
+    const syncSpan = document.querySelector('.subheader-sync');
+    if (syncSpan) syncSpan.textContent = `Last synced: ${age}s ago`;
   }
 
   liveDataLoaded = true;
