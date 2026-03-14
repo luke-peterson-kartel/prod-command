@@ -611,6 +611,7 @@
   .glow-green { text-shadow: 0 0 8px rgba(0,255,136,0.5); }
   .glow-cyan { text-shadow: 0 0 8px rgba(0,212,255,0.5); }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
@@ -1334,12 +1335,30 @@ function renderTasks() {
   }).join('');
 }
 
+function fireConfetti(el) {
+  if (typeof confetti !== 'function') return;
+  const rect = el.getBoundingClientRect();
+  const x = (rect.left + rect.width / 2) / window.innerWidth;
+  const y = (rect.top + rect.height / 2) / window.innerHeight;
+  confetti({
+    particleCount: 80,
+    spread: 70,
+    origin: { x, y },
+    colors: ['#00ff88', '#00d4ff', '#c084fc', '#f59e0b', '#ff6b9d', '#ffffff'],
+    startVelocity: 28,
+    gravity: 1.1,
+    ticks: 180,
+    scalar: 0.85,
+  });
+}
+
 function completeTask(id) {
   const task = tasks.find(t => t.id === id);
   if (!task || task.done) return;
   const el = document.getElementById('task-' + id);
   if (el) {
     el.classList.add('completing');
+    fireConfetti(el);
     setTimeout(() => {
       task.done = true;
       completedCount++;
