@@ -1289,16 +1289,23 @@ const ASSIGNEES = {
 };
 
 const tasks = [
-  { id:1,  project:'Newell',     projectColor:'#00ff88', projectBg:'rgba(0,255,136,0.12)',   task:'Deliver sizzle video + brand deck to client',                         due:'TODAY',     dueClass:'today',  assignee:'Veronica' },
-  { id:2,  project:'GoGo',       projectColor:'#f59e0b', projectBg:'rgba(245,158,11,0.12)',  task:'Client animatic approval — begin generation (Running)',                due:'ASAP',      dueClass:'asap',   assignee:'Veronica' },
-  { id:3,  project:'GoGo',       projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)',   task:'Chase client script approval — blocker for 3/16 (Soccer)',            due:'ASAP',      dueClass:'asap',   assignee:'Wayan' },
-  { id:4,  project:'Real Estate',projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Request ProRes HQ master from Stuart',                                due:'Mar 12',    dueClass:'soon',   assignee:'Wayan' },
-  { id:5,  project:'fal.ai',     projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Follow up w/ Luke + Ben on contract signing',                         due:'Mar 12',    dueClass:'soon',   assignee:'Wayan' },
-  { id:6,  project:'LIDL',       projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Receive final video → archive → Handoff #4',                          due:'TBD',       dueClass:'tbd',    assignee:'Veronica' },
-  { id:7,  project:'Treefort',   projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)',   task:'Confirm project status with Stuart — active or stale?',               due:'ASAP',      dueClass:'asap',   assignee:'Wayan' },
-  { id:8,  project:'Production', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Finalize production contact list (artists, mixers, etc.)',             due:'This week', dueClass:'normal', assignee:'Wayan' },
-  { id:9,  project:'Frame.io',   projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Review Frame.io materials with Estefania',                            due:'This week', dueClass:'normal', assignee:'Veronica' },
-  { id:10, project:'NEB #4',     projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Initiate Handoff #4 Closing Reports (Newell Bubba, Marc Jacobs, Masked Singer)', due:'This week', dueClass:'normal', assignee:'Estefania' },
+  // ── Wayan ──
+  { id:1,  project:'GoGo',       projectColor:'#ef4444', projectBg:'rgba(239,68,68,0.12)',   task:'Chase client script approval — blocker for Mon 3/16 (Soccer)',        due:'ASAP',      dueClass:'asap',   assignee:'Wayan' },
+  { id:2,  project:'GoGo',       projectColor:'#f59e0b', projectBg:'rgba(245,158,11,0.12)',  task:'Confirm GoGo Running delivery status with Veronica',                  due:'ASAP',      dueClass:'asap',   assignee:'Wayan' },
+  { id:3,  project:'fal.ai',     projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Follow up w/ Luke + Ben on contract signing',                         due:'This week', dueClass:'normal', assignee:'Wayan' },
+  { id:4,  project:'Treefort',   projectColor:'#f59e0b', projectBg:'rgba(245,158,11,0.12)',  task:'Confirm project status with Stuart — active or stale?',               due:'ASAP',      dueClass:'asap',   assignee:'Wayan' },
+  { id:5,  project:'Production', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Finalize production contact list (artists, mixers, etc.)',             due:'This week', dueClass:'normal', assignee:'Wayan' },
+  { id:6,  project:'Credits',    projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Review credit system',                                                due:'This week', dueClass:'normal', assignee:'Wayan' },
+  { id:7,  project:'HR',         projectColor:'#d46cff', projectBg:'rgba(212,70,255,0.1)',   task:'Get Gen + Prod team to sign: Artist Code of Conduct v4',              due:'This week', dueClass:'normal', assignee:'Wayan' },
+  { id:8,  project:'HR',         projectColor:'#d46cff', projectBg:'rgba(212,70,255,0.1)',   task:'Get Gen + Prod team to sign: Compensation & Availability Policy',     due:'This week', dueClass:'normal', assignee:'Wayan' },
+  { id:9,  project:'Production', projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Update the crew list',                                                due:'This week', dueClass:'normal', assignee:'Wayan' },
+  // ── Veronica ──
+  { id:10, project:'GoGo',       projectColor:'#f59e0b', projectBg:'rgba(245,158,11,0.12)',  task:'GoGo Running — rough motion cut delivery EOD',                        due:'TODAY',     dueClass:'asap',   assignee:'Veronica' },
+  { id:11, project:'NEB',        projectColor:'#00ff88', projectBg:'rgba(0,255,136,0.12)',   task:'NEB UGC videos — deliver today',                                      due:'TODAY',     dueClass:'asap',   assignee:'Veronica' },
+  { id:12, project:'LIDL',       projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Receive final video → archive → Handoff #4',                          due:'TBD',       dueClass:'tbd',    assignee:'Veronica' },
+  { id:13, project:'Frame.io',   projectColor:'#00d4ff', projectBg:'rgba(0,212,255,0.1)',    task:'Review Frame.io materials with Estefania',                            due:'This week', dueClass:'normal', assignee:'Veronica' },
+  // ── Estefania ──
+  { id:14, project:'Closing',    projectColor:'#818cf8', projectBg:'rgba(99,102,241,0.12)',  task:'Initiate Handoff #4 Closing Reports (Newell Bubba, Marc Jacobs, Masked Singer)', due:'This week', dueClass:'normal', assignee:'Estefania' },
 ];
 
 let completedCount = 0;
