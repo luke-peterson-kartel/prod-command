@@ -383,6 +383,12 @@
     position: relative;
   }
   .task-item:hover { background: rgba(0,212,255,0.04); }
+  .task-group-header {
+    display: flex; align-items: center; padding: 8px 10px 4px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    margin-top: 4px;
+  }
+  .task-group-header:first-child { border-top: none; margin-top: 0; }
   .task-item.completing {
     opacity: 0; transform: translateX(20px);
     transition: opacity 0.4s ease, transform 0.4s ease;
@@ -1309,30 +1315,54 @@ function renderTasks() {
     return;
   }
 
-  list.innerHTML = active.map(t => {
-    const a = t.assignee ? ASSIGNEES[t.assignee] : null;
-    const assigneeHtml = a
-      ? `<div class="task-assignee">
-           <div class="task-assignee-dot" style="background:${a.bg};color:${a.fg}">${a.initials}</div>
-           <span class="task-assignee-name">${t.assignee}</span>
-         </div>`
-      : '';
-    return `
-    <div class="task-item" id="task-${t.id}" onclick="completeTask(${t.id})">
-      <div class="task-checkbox"></div>
-      <div class="task-content">
-        <div class="task-project" style="color:${t.projectColor};background:${t.projectBg}">${t.project}</div>
-        <div class="task-name">${t.task}</div>
-        <div class="task-meta">
-          <div class="task-due">
-            <span class="task-due-label">DUE</span>
-            <span class="task-due-val ${t.dueClass}">${t.due}</span>
-          </div>
-          ${assigneeHtml}
-        </div>
-      </div>
+  // Group by assignee, unassigned last
+  const assigneeOrder = ['Wayan', 'Veronica', 'Estefania', 'Monica', 'Stuart', 'Luke'];
+  const groups = {};
+  active.forEach(t => {
+    const key = t.assignee || '—';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  // Sort group keys by assigneeOrder, then alphabetically for any unlisted
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    const ai = assigneeOrder.indexOf(a);
+    const bi = assigneeOrder.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
+  let html = '';
+  sortedKeys.forEach(key => {
+    const a = ASSIGNEES[key];
+    // Assignee group header
+    html += `<div class="task-group-header">
+      ${a ? `<div class="task-assignee-dot" style="background:${a.bg};color:${a.fg};width:16px;height:16px;font-size:7px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;margin-right:5px">${a.initials}</div>` : ''}
+      <span style="font-size:9px;font-weight:700;color:${a ? a.fg : 'var(--text3)'};letter-spacing:0.08em;text-transform:uppercase">${key}</span>
+      <span style="font-size:8px;color:var(--text3);margin-left:auto">${groups[key].length} task${groups[key].length !== 1 ? 's' : ''}</span>
     </div>`;
-  }).join('');
+
+    groups[key].forEach(t => {
+      html += `
+      <div class="task-item" id="task-${t.id}" onclick="completeTask(${t.id})">
+        <div class="task-checkbox"></div>
+        <div class="task-content">
+          <div class="task-project" style="color:${t.projectColor};background:${t.projectBg}">${t.project}</div>
+          <div class="task-name">${t.task}</div>
+          <div class="task-meta">
+            <div class="task-due">
+              <span class="task-due-label">DUE</span>
+              <span class="task-due-val ${t.dueClass}">${t.due}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+
+  list.innerHTML = html;
 }
 
 function fireConfetti(el) {
