@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KARTEL | ARTIST TRACKING</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #070b14; --bg2: #0c1120; --bg3: #111827; --card: #0d1526; --card-hover: #131d30;
+    --accent: #00ff88; --accent2: #00d4ff; --accent-dim: rgba(0,255,136,0.12);
+    --text: #e2eeff; --text2: #7a9bb5; --text3: #4a6a85;
+    --border: rgba(0,255,136,0.15); --at-risk: #f59e0b; --overdue: #ef4444;
+    --complete: #00c97a; --col-purple: #818cf8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 12px; }
+
+  /* ─── TOP NAV ── */
+  .top-nav { background: var(--bg2); border-bottom: 1px solid rgba(129,140,248,0.15); display: flex; align-items: center; padding: 0 20px; gap: 2px; position: sticky; top: 0; z-index: 101; height: 36px; }
+  .nav-brand { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .12em; margin-right: 12px; white-space: nowrap; }
+  .nav-btn { background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--text3); padding: 0 14px; height: 36px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: color .15s; white-space: nowrap; }
+  .nav-btn:hover { color: var(--text2); }
+  .nav-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .nav-divider { width: 1px; height: 16px; background: rgba(255,255,255,.06); margin: 0 4px; }
+
+  /* ─── HEADER ── */
+  .header { background: linear-gradient(180deg, #0a1020 0%, var(--bg2) 100%); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
+  .brand-title { font-size: 13px; font-weight: 700; color: var(--accent2); letter-spacing: .12em; }
+  .brand-sub { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .refresh-btn { font-family: inherit; font-size: 10px; color: var(--text3); background: none; border: 1px solid rgba(255,255,255,.08); padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+  .refresh-btn:hover { color: var(--text2); }
+  .age-label { font-size: 9px; color: var(--text3); }
+
+  /* ─── INFO STRIP ── */
+  .info-strip { background: var(--bg2); border-bottom: 1px solid rgba(0,255,136,.06); padding: 7px 20px; display: flex; align-items: center; gap: 16px; }
+  .strip-stat { display: flex; align-items: center; gap: 6px; }
+  .strip-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .strip-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; }
+  .strip-val { font-size: 11px; font-weight: 700; }
+  .strip-sep { font-size: 10px; color: var(--text3); }
+
+  /* ─── FILTER STRIP ── */
+  .filter-strip { background: var(--bg); border-bottom: 1px solid rgba(255,255,255,.04); padding: 8px 20px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .filter-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-right: 4px; }
+  .filter-pill { font-family: inherit; font-size: 9px; font-weight: 600; color: var(--text2); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 3px 10px; cursor: pointer; transition: all .15s; }
+  .filter-pill:hover { color: var(--accent2); border-color: rgba(0,212,255,.25); }
+  .filter-pill.active { color: var(--accent2); background: rgba(0,212,255,.1); border-color: rgba(0,212,255,.35); }
+
+  /* ─── CAPACITY BOARD ── */
+  .capacity-board { display: flex; gap: 0; overflow-x: auto; min-height: calc(100vh - 160px); }
+  .cap-col { display: flex; flex-direction: column; min-width: 280px; flex: 1; border-right: 1px solid rgba(255,255,255,.04); }
+  .cap-col:last-child { border-right: none; }
+  .cap-col-header { padding: 12px 16px 10px; border-bottom: 1px solid rgba(255,255,255,.05); position: sticky; top: 72px; z-index: 10; background: var(--bg2); display: flex; align-items: center; justify-content: space-between; }
+  .cap-col-header.available  { border-top: 2px solid var(--accent);  background: rgba(0,255,136,.03); }
+  .cap-col-header.active-col { border-top: 2px solid var(--accent2); background: rgba(0,212,255,.03); }
+  .cap-col-header.almost     { border-top: 2px solid var(--at-risk); background: rgba(245,158,11,.03); }
+  .cap-col-header.full-cap   { border-top: 2px solid var(--overdue); background: rgba(239,68,68,.03); }
+  .cap-col-title { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .cap-col-title.available { color: var(--accent); }
+  .cap-col-title.active-col { color: var(--accent2); }
+  .cap-col-title.almost     { color: var(--at-risk); }
+  .cap-col-title.full-cap   { color: var(--overdue); }
+  .cap-col-count { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; }
+  .cap-col-count.available { color: var(--accent);  background: rgba(0,255,136,.1); }
+  .cap-col-count.active-col { color: var(--accent2); background: rgba(0,212,255,.1); }
+  .cap-col-count.almost     { color: var(--at-risk); background: rgba(245,158,11,.1); }
+  .cap-col-count.full-cap   { color: var(--overdue); background: rgba(239,68,68,.1); }
+  .cap-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+
+  /* ─── ARTIST CARD ── */
+  .artist-card { background: var(--card); border: 1px solid rgba(255,255,255,.06); border-radius: 6px; padding: 10px 12px; cursor: default; transition: all .15s; }
+  .artist-card:hover { background: var(--card-hover); border-color: rgba(255,255,255,.1); transform: translateY(-1px); }
+  .artist-card.available  { border-left: 2px solid rgba(0,255,136,.4); }
+  .artist-card.active-card { border-left: 2px solid rgba(0,212,255,.4); }
+  .artist-card.almost     { border-left: 2px solid rgba(245,158,11,.5); }
+  .artist-card.full-cap   { border-left: 2px solid rgba(239,68,68,.5); }
+  .artist-card[data-hidden="true"] { display: none; }
+  .artist-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .artist-code { font-size: 9px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; background: rgba(0,255,136,.1); color: var(--accent); border: 1px solid rgba(0,255,136,.2); }
+  .artist-name { font-size: 11px; font-weight: 600; color: var(--text); flex: 1; }
+  .artist-role { font-size: 9px; color: var(--text3); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 7px; }
+  .cap-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .cap-bar-track { flex: 1; height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+  .cap-bar-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+  .cap-bar-fill.available  { background: var(--accent); }
+  .cap-bar-fill.active-fill { background: var(--accent2); }
+  .cap-bar-fill.almost     { background: var(--at-risk); }
+  .cap-bar-fill.full       { background: var(--overdue); }
+  .cap-bar-label { font-size: 9px; color: var(--text3); white-space: nowrap; }
+  .artist-projects { display: flex; flex-direction: column; gap: 3px; }
+  .proj-pill { font-size: 9px; color: var(--text2); display: flex; align-items: center; gap: 5px; }
+  .proj-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
+  .rec-badge { font-size: 8px; font-weight: 700; letter-spacing: .08em; color: var(--accent); padding: 1px 5px; border-radius: 2px; background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.2); }
+  .no-cards { font-size: 10px; color: var(--text3); font-style: italic; padding: 12px 4px; text-align: center; }
+  .loading-msg { padding: 40px 20px; color: var(--text3); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- ── TOP NAV ── -->
+<div class="top-nav">
+  <span class="nav-brand">🟢 KLAW</span>
+  <div class="nav-divider"></div>
+  <a class="nav-btn" href="/">📋 BOARD</a>
+  <a class="nav-btn" href="/overview-mockup.html">🗂 OVERVIEW</a>
+  <a class="nav-btn active" href="/capacity-mockup.html">👥 ARTISTS</a>
+  <a class="nav-btn" href="/calendar.html">📅 CALENDAR</a>
+</div>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div>
+    <div class="brand-title">👥 ARTIST TRACKING</div>
+    <div class="brand-sub" id="brand-sub">Loading...</div>
+  </div>
+  <div class="header-right">
+    <span class="age-label" id="age-label"></span>
+    <button class="refresh-btn" onclick="loadArtists()">↺ Refresh</button>
+  </div>
+</div>
+
+<!-- ── INFO STRIP ── -->
+<div class="info-strip" id="info-strip">
+  <div class="strip-stat"><div class="strip-dot" style="background:var(--text3)"></div><span class="strip-label">Loading...</span></div>
+</div>
+
+<!-- ── FILTER STRIP ── -->
+<div class="filter-strip" id="filter-strip">
+  <span class="filter-label">Filter:</span>
+  <button class="filter-pill active" onclick="setFilter('all',this)">All Roles</button>
+</div>
+
+<!-- ── CAPACITY BOARD ── -->
+<div class="capacity-board" id="capacity-board">
+  <div class="loading-msg">⟳ Loading live artist data from AirTable...</div>
+</div>
+
+<script>
+let allArtists = [];
+let activeFilter = 'all';
+
+function cardClass(status) {
+  if (!status) return 'available';
+  const s = status.toLowerCase();
+  if (s.includes('capacity') || s.includes('full')) return 'full-cap';
+  if (s.includes('almost') || s.includes('nearly')) return 'almost';
+  if (s.includes('active') || s.includes('working') || (parseInt(s) > 0)) return 'active-card';
+  return 'available';
+}
+function fillClass(status) {
+  const c = cardClass(status);
+  if (c === 'full-cap') return 'full';
+  if (c === 'almost') return 'almost';
+  if (c === 'active-card') return 'active-fill';
+  return 'available';
+}
+function colClass(key) {
+  return { available: 'available', active: 'active-col', almost: 'almost', full: 'full-cap' }[key] || 'available';
+}
+function colLabel(key) {
+  return { available: '✅ Available', active: '🔵 Active', almost: '⚠️ Almost Full', full: '🔴 At Capacity' }[key] || key;
+}
+
+function buildCard(artist) {
+  const cls = cardClass(artist.status);
+  const pct = artist.max > 0 ? Math.round((artist.count / artist.max) * 100) : (artist.count > 0 ? 100 : 0);
+  const barLabel = artist.max > 0 ? `${artist.count}/${artist.max}` : (artist.count > 0 ? `${artist.count} projects` : 'Open');
+  const projHtml = (artist.projects || []).map(p =>
+    `<div class="proj-pill"><div class="proj-dot"></div><span>${p}</span></div>`
+  ).join('');
+  const recHtml = artist.recommended ? `<span class="rec-badge">⭐ RECOMMENDED</span>` : '';
+  return `
+    <div class="artist-card ${cls}" data-role="${artist.role || ''}" data-hidden="false">
+      <div class="artist-card-top">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+            <span class="artist-code">${artist.code || '??'}</span>
+            <span class="artist-name">${artist.name}</span>
+          </div>
+          <div class="artist-role">${artist.role || '—'}</div>
+        </div>
+        ${recHtml}
+      </div>
+      <div class="cap-bar-wrap">
+        <div class="cap-bar-track"><div class="cap-bar-fill ${fillClass(artist.status)}" style="width:${Math.min(pct,100)}%"></div></div>
+        <span class="cap-bar-label">${barLabel}</span>
+      </div>
+      ${projHtml ? `<div class="artist-projects">${projHtml}</div>` : ''}
+    </div>`;
+}
+
+function getCol(artist) {
+  const s = (artist.status || '').toLowerCase();
+  if (s.includes('capacity') || s.includes('full')) return 'full';
+  if (s.includes('almost') || s.includes('nearly')) return 'almost';
+  if (artist.count > 0) return 'active';
+  return 'available';
+}
+
+function applyFilter() {
+  document.querySelectorAll('.artist-card').forEach(card => {
+    const role = card.getAttribute('data-role') || '';
+    const show = activeFilter === 'all' || role.toLowerCase().includes(activeFilter.toLowerCase());
+    card.setAttribute('data-hidden', show ? 'false' : 'true');
+  });
+  // Update empty state
+  document.querySelectorAll('.cap-col-body').forEach(body => {
+    const visible = [...body.querySelectorAll('.artist-card')].filter(c => c.getAttribute('data-hidden') !== 'true');
+    let empty = body.querySelector('.no-cards');
+    if (visible.length === 0) {
+      if (!empty) { empty = document.createElement('div'); empty.className = 'no-cards'; body.appendChild(empty); }
+      empty.textContent = '— None matching filter —';
+    } else if (empty) empty.remove();
+  });
+}
+
+function setFilter(val, btn) {
+  activeFilter = val;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+
+async function loadArtists() {
+  const board = document.getElementById('capacity-board');
+  board.innerHTML = '<div class="loading-msg">⟳ Fetching live data...</div>';
+
+  try {
+    const res = await fetch('/api/artists');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allArtists = data.artists || [];
+
+    // Stats
+    const cols = { available: [], active: [], almost: [], full: [] };
+    allArtists.forEach(a => cols[getCol(a)].push(a));
+
+    document.getElementById('brand-sub').textContent = `${allArtists.length} artists · live from AirTable`;
+    document.getElementById('age-label').textContent = data.cacheAge != null ? `Data ${data.cacheAge}s old` : '';
+
+    // Info strip
+    document.getElementById('info-strip').innerHTML = `
+      <div class="strip-stat"><div class="strip-dot" style="background:var(--accent)"></div><span class="strip-label">Total</span><span class="strip-val" style="color:var(--text)">${allArtists.length}</span></div>
+      <div class="strip-sep">·</div>
+      <div class="strip-stat"><div class="strip-dot" style="background:var(--accent)"></div><span class="strip-label">Available</span><span class="strip-val" style="color:var(--accent)">${cols.available.length}</span></div>
+      <div class="strip-sep">·</div>
+      <div class="strip-stat"><div class="strip-dot" style="background:var(--accent2)"></div><span class="strip-label">Active</span><span class="strip-val" style="color:var(--accent2)">${cols.active.length}</span></div>
+      <div class="strip-sep">·</div>
+      <div class="strip-stat"><div class="strip-dot" style="background:var(--at-risk)"></div><span class="strip-label">Almost Full</span><span class="strip-val" style="color:var(--at-risk)">${cols.almost.length}</span></div>
+      <div class="strip-sep">·</div>
+      <div class="strip-stat"><div class="strip-dot" style="background:var(--overdue)"></div><span class="strip-label">At Capacity</span><span class="strip-val" style="color:var(--overdue)">${cols.full.length}</span></div>
+      <div class="strip-sep">·</div>
+      <span class="strip-label">Last sync: ${new Date().toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'})}</span>`;
+
+    // Build role filter pills
+    const roles = [...new Set(allArtists.map(a => a.role).filter(Boolean))].sort();
+    const filterStrip = document.getElementById('filter-strip');
+    filterStrip.innerHTML = `<span class="filter-label">Filter:</span>
+      <button class="filter-pill ${activeFilter==='all'?'active':''}" onclick="setFilter('all',this)">All Roles</button>
+      ${roles.map(r => `<button class="filter-pill ${activeFilter===r?'active':''}" onclick="setFilter('${r.replace(/'/g,"\\'")}',this)">${r}</button>`).join('')}`;
+
+    // Build columns
+    const colOrder = ['available','active','almost','full'];
+    board.innerHTML = colOrder.map(key => {
+      const artists = cols[key];
+      const cls = colClass(key);
+      return `
+        <div class="cap-col">
+          <div class="cap-col-header ${cls}">
+            <span class="cap-col-title ${cls}">${colLabel(key)}</span>
+            <span class="cap-col-count ${cls}">${artists.length}</span>
+          </div>
+          <div class="cap-col-body">
+            ${artists.length ? artists.map(a => buildCard(a)).join('') : '<div class="no-cards">— None —</div>'}
+          </div>
+        </div>`;
+    }).join('');
+
+    applyFilter();
+  } catch(e) {
+    board.innerHTML = `<div class="loading-msg" style="color:var(--overdue)">⚠ Failed to load: ${e.message}</div>`;
+  }
+}
+
+loadArtists();
+setInterval(loadArtists, 5 * 60 * 1000);
+</script>
+</body>
+</html>

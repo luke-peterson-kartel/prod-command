@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KARTEL | CALENDAR</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #070b14; --bg2: #0c1120; --bg3: #111827; --card: #0d1526; --card-hover: #131d30;
+    --accent: #00ff88; --accent2: #00d4ff; --text: #e2eeff; --text2: #7a9bb5; --text3: #4a6a85;
+    --border: rgba(0,255,136,0.15); --at-risk: #f59e0b; --overdue: #ef4444;
+    --col-purple: #818cf8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 12px; }
+
+  /* ─── TOP NAV ── */
+  .top-nav { background: var(--bg2); border-bottom: 1px solid rgba(129,140,248,0.15); display: flex; align-items: center; padding: 0 20px; gap: 2px; position: sticky; top: 0; z-index: 101; height: 36px; }
+  .nav-brand { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .12em; margin-right: 12px; white-space: nowrap; }
+  .nav-btn { background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--text3); padding: 0 14px; height: 36px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: color .15s; white-space: nowrap; }
+  .nav-btn:hover { color: var(--text2); }
+  .nav-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .nav-divider { width: 1px; height: 16px; background: rgba(255,255,255,.06); margin: 0 4px; }
+
+  /* ─── HEADER ── */
+  .header { background: linear-gradient(180deg, #0a1020 0%, var(--bg2) 100%); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
+  .brand-title { font-size: 13px; font-weight: 700; color: var(--accent2); letter-spacing: .12em; }
+  .brand-sub { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .refresh-btn { font-family: inherit; font-size: 10px; color: var(--text3); background: none; border: 1px solid rgba(255,255,255,.08); padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+  .refresh-btn:hover { color: var(--text2); }
+
+  /* ─── CONTENT ── */
+  .content { padding: 20px 24px; max-width: 900px; }
+
+  /* ─── DAY SECTION ── */
+  .day-section { margin-bottom: 28px; }
+  .day-label { font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--text3); padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.04); margin-bottom: 10px; }
+  .day-label.today { color: var(--accent); }
+  .day-label span { font-size: 11px; font-weight: 700; margin-right: 8px; }
+
+  /* ─── MEETING CARD ── */
+  .meeting-card { background: var(--card); border: 1px solid rgba(255,255,255,.06); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid var(--accent2); transition: background .15s; }
+  .meeting-card:hover { background: var(--card-hover); }
+  .meeting-card.past { opacity: 0.5; border-left-color: var(--text3); }
+  .meeting-card.now  { border-left-color: var(--accent); box-shadow: 0 0 0 1px rgba(0,255,136,.15); }
+  .meeting-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+  .meeting-time-block { flex-shrink: 0; text-align: right; min-width: 64px; }
+  .meeting-time { font-size: 11px; font-weight: 700; color: var(--accent2); white-space: nowrap; }
+  .meeting-time.past { color: var(--text3); }
+  .meeting-time.now  { color: var(--accent); }
+  .meeting-duration { font-size: 9px; color: var(--text3); margin-top: 2px; }
+  .meeting-title { font-size: 12px; font-weight: 700; color: var(--text); flex: 1; line-height: 1.3; }
+  .meeting-where { font-size: 9px; color: var(--accent2); margin-top: 3px; }
+  .meeting-people { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .person-pill { font-size: 9px; color: var(--text2); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 2px 8px; }
+  .person-pill.kartel { color: var(--accent2); background: rgba(0,212,255,.06); border-color: rgba(0,212,255,.15); }
+  .person-pill.client { color: var(--at-risk); background: rgba(245,158,11,.06); border-color: rgba(245,158,11,.15); }
+  .now-badge { font-size: 8px; font-weight: 700; letter-spacing: .08em; color: var(--accent); background: rgba(0,255,136,.1); border: 1px solid rgba(0,255,136,.25); border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
+  .empty-day { font-size: 10px; color: var(--text3); font-style: italic; padding: 8px 4px; }
+  .loading-msg { padding: 40px 24px; color: var(--text3); font-size: 11px; }
+  .error-msg { padding: 40px 24px; color: var(--overdue); font-size: 11px; }
+  .link-btn { font-size: 9px; color: var(--col-purple); text-decoration: none; margin-top: 4px; display: inline-block; }
+  .link-btn:hover { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- ── TOP NAV ── -->
+<div class="top-nav">
+  <span class="nav-brand">🟢 KLAW</span>
+  <div class="nav-divider"></div>
+  <a class="nav-btn" href="/">📋 BOARD</a>
+  <a class="nav-btn" href="/overview-mockup.html">🗂 OVERVIEW</a>
+  <a class="nav-btn" href="/capacity-mockup.html">👥 ARTISTS</a>
+  <a class="nav-btn active" href="/calendar.html">📅 CALENDAR</a>
+</div>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div>
+    <div class="brand-title">📅 PRODUCTION CALENDAR</div>
+    <div class="brand-sub" id="brand-sub">Loading...</div>
+  </div>
+  <div class="header-right">
+    <button class="refresh-btn" onclick="loadCalendar()">↺ Refresh</button>
+  </div>
+</div>
+
+<div class="content" id="content">
+  <div class="loading-msg">⟳ Loading calendar from Google Calendar...</div>
+</div>
+
+<script>
+function fmt(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+function fmtDuration(start, end) {
+  if (!start || !end) return '';
+  const mins = Math.round((new Date(end) - new Date(start)) / 60000);
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+function dayKey(dateStr) {
+  const d = new Date(dateStr);
+  return d.toDateString();
+}
+function dayLabel(dateStr) {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
+  const opts = { weekday: 'long', month: 'long', day: 'numeric' };
+  const base = d.toLocaleDateString('en-US', opts);
+  if (d.toDateString() === today.toDateString()) return { label: `TODAY · ${base}`, isToday: true };
+  if (d.toDateString() === tomorrow.toDateString()) return { label: `TOMORROW · ${base}`, isToday: false };
+  return { label: base, isToday: false };
+}
+function isPast(dateStr) {
+  return new Date(dateStr) < new Date();
+}
+function isNow(start, end) {
+  const now = new Date();
+  return new Date(start) <= now && new Date(end) >= now;
+}
+
+async function loadCalendar() {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading-msg">⟳ Fetching calendar...</div>';
+  try {
+    const res = await fetch('/api/meetings');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const meetings = data.meetings || [];
+
+    document.getElementById('brand-sub').textContent =
+      `${meetings.length} event${meetings.length !== 1 ? 's' : ''} · Production calendars`;
+
+    if (!meetings.length) {
+      content.innerHTML = '<div class="empty-day">No upcoming meetings found. Check that Google Calendar is connected and calendars are shared to prod@kartel.ai.</div>';
+      return;
+    }
+
+    // Group by day
+    const byDay = {};
+    const dayOrder = [];
+    meetings.forEach(m => {
+      const start = m.start || m.startTime;
+      if (!start) return;
+      const key = dayKey(start);
+      if (!byDay[key]) { byDay[key] = []; dayOrder.push(key); }
+      byDay[key].push(m);
+    });
+
+    let html = '';
+    dayOrder.forEach(dayK => {
+      const evts = byDay[dayK];
+      const firstStart = evts[0].start || evts[0].startTime;
+      const { label, isToday } = dayLabel(firstStart);
+      html += `<div class="day-section">
+        <div class="day-label ${isToday ? 'today' : ''}"><span>${label}</span></div>`;
+
+      evts.forEach(m => {
+        const start = m.start || m.startTime;
+        const end   = m.end   || m.endTime;
+        const past = !isToday && isPast(end || start);
+        const live = isNow(start, end || start);
+        const cardCls = live ? 'now' : (past ? 'past' : '');
+        const timeCls = live ? 'now' : (past ? 'past' : '');
+        const timeStr = start ? fmt(start) : (m.allDay ? 'All Day' : '—');
+        const duration = fmtDuration(start, end);
+        const title = m.summary || m.title || '(No title)';
+        const location = m.location || m.where || m.meetUrl || '';
+        const kartelPeople = (m.kartelAttendees || []);
+        const clientPeople = (m.clientAttendees || []);
+        const allPeople = [...kartelPeople, ...clientPeople].slice(0, 8);
+        const link = m.link || m.htmlLink || m.meetUrl || '';
+
+        html += `<div class="meeting-card ${cardCls}">
+          <div class="meeting-top">
+            <div class="meeting-time-block">
+              <div class="meeting-time ${timeCls}">${timeStr}${live ? '' : ''}</div>
+              ${duration ? `<div class="meeting-duration">${duration}</div>` : ''}
+            </div>
+            <div style="flex:1">
+              <div class="meeting-title">${title}${live ? '<span class="now-badge">NOW</span>' : ''}</div>
+              ${location ? `<div class="meeting-where">📍 ${location.replace(/^https?:\/\/meet\.google\.com\//, 'meet.google.com/')}</div>` : ''}
+            </div>
+          </div>
+          ${allPeople.length ? `<div class="meeting-people">
+            ${kartelPeople.map(p => `<span class="person-pill kartel">${p}</span>`).join('')}
+            ${clientPeople.map(p => `<span class="person-pill client">${p}</span>`).join('')}
+          </div>` : ''}
+          ${link ? `<a class="link-btn" href="${link}" target="_blank">↗ Open in Google Calendar</a>` : ''}
+        </div>`;
+      });
+
+      html += '</div>';
+    });
+
+    content.innerHTML = html || '<div class="empty-day">No events to display.</div>';
+  } catch(e) {
+    content.innerHTML = `<div class="error-msg">⚠ Failed to load calendar: ${e.message}<br><br>Make sure Google Calendar is connected and production@kartel.ai (or wayan@/veronica@kartel.ai) is accessible.</div>`;
+  }
+}
+
+loadCalendar();
+setInterval(loadCalendar, 5 * 60 * 1000);
+</script>
+</body>
+</html>

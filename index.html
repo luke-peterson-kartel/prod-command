@@ -37,6 +37,25 @@
     font-size: 12px;
   }
 
+  /* ─── NAV BAR ── */
+  .top-nav {
+    background: var(--bg2); border-bottom: 1px solid rgba(129,140,248,0.15);
+    display: flex; align-items: center; padding: 0 20px; gap: 2px;
+    position: sticky; top: 0; z-index: 101; height: 36px;
+  }
+  .nav-brand { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: 0.12em; margin-right: 12px; white-space: nowrap; }
+  .nav-btn {
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--text3);
+    padding: 0 14px; height: 36px; border-bottom: 2px solid transparent;
+    transition: all 0.15s; white-space: nowrap; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .nav-btn:hover { color: var(--text2); }
+  .nav-btn.active { color: var(--col-purple); border-bottom-color: var(--col-purple); }
+  .nav-btn.active-green { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-divider { width: 1px; height: 16px; background: rgba(255,255,255,0.06); margin: 0 4px; }
+
   /* ─── HEADER ── */
   .header {
     background: linear-gradient(180deg, #0a1020 0%, var(--bg2) 100%);
@@ -780,6 +799,16 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
+
+<!-- ── TOP NAV ── -->
+<div class="top-nav">
+  <span class="nav-brand">🟢 KLAW</span>
+  <div class="nav-divider"></div>
+  <a class="nav-btn active-green" href="/" title="Pipeline Board">📋 BOARD</a>
+  <a class="nav-btn" href="/overview-mockup.html" title="Project Overview">🗂 OVERVIEW</a>
+  <a class="nav-btn" href="/capacity-mockup.html" title="Artist Tracking">👥 ARTISTS</a>
+  <a class="nav-btn" href="/calendar.html" title="Calendar">📅 CALENDAR</a>
+</div>
 
 <!-- ── HEADER ── -->
 <div class="header">
