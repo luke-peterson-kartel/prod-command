@@ -128,6 +128,42 @@
   .info-handoff-num { font-size: 9px; font-weight: 700; color: var(--accent2); }
   .info-handoff-text { font-size: 9px; color: var(--text2); }
   .info-handoff-flag { color: var(--at-risk); }
+  /* ─── MEETINGS STRIP ── */
+  .meetings-strip {
+    background: var(--bg2); border-bottom: 1px solid rgba(0,212,255,0.1);
+    display: flex; align-items: center; gap: 0; height: 48px; flex-shrink: 0;
+    overflow: hidden; padding: 0 16px;
+  }
+  .meetings-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.15em; color: #00e5ff;
+    text-transform: uppercase; white-space: nowrap; padding-right: 12px;
+    border-right: 1px solid rgba(0,212,255,0.25); margin-right: 12px; flex-shrink: 0;
+  }
+  .meetings-scroll { display: flex; align-items: center; flex: 1; overflow: hidden; position: relative; }
+  .meetings-ticker {
+    display: flex; align-items: center; gap: 20px;
+    animation: meetings-scroll-anim 30s linear infinite;
+    white-space: nowrap; will-change: transform;
+    transform: translateZ(0);
+  }
+  .meetings-ticker:hover { animation-play-state: paused; }
+  @keyframes meetings-scroll-anim {
+    0%   { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-50%, 0, 0); }
+  }
+  .meeting-pill {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 4px; padding: 4px 10px; cursor: default;
+    transition: background 0.15s;
+  }
+  .meeting-pill:hover { background: rgba(0,212,255,0.1); }
+  .meeting-time { font-size: 10px; font-weight: 700; color: #00e5ff; white-space: nowrap; }
+  .meeting-title { font-size: 10px; font-weight: 600; color: #e8f4ff; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meeting-who { font-size: 9px; color: #a0c4d8; white-space: nowrap; }
+  .meeting-dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(0,212,255,0.5); flex-shrink: 0; }
+  .meetings-empty { font-size: 10px; color: var(--text2); font-style: italic; }
+
   .board-wrap { flex: 1; overflow: hidden; padding: 12px 12px 0; }
   .board { display: flex; gap: 8px; height: 100%; width: 100%; }
 
@@ -350,6 +386,7 @@
     width: 210px; flex-shrink: 0;
     background: var(--bg2); border-left: 1px solid rgba(0,212,255,0.2);
     display: flex; flex-direction: column; overflow: hidden;
+    padding-top: 12px;
   }
   .task-tracker-header {
     padding: 10px 12px 8px;
@@ -370,10 +407,17 @@
   .task-count { font-size: 9px; color: var(--text3); }
   .task-count span { color: var(--accent2); font-weight: 700; }
   .task-list {
-    flex: 1; overflow-y: auto; padding: 6px 0;
+    flex: 1; overflow: hidden; padding: 6px 0; position: relative;
   }
-  .task-list::-webkit-scrollbar { width: 3px; }
-  .task-list::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+  .task-list-inner {
+    display: flex; flex-direction: column;
+    animation: task-ticker-scroll 40s linear infinite;
+  }
+  .task-list:hover .task-list-inner { animation-play-state: paused; }
+  @keyframes task-ticker-scroll {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
 
   .task-item {
     padding: 7px 12px;
@@ -616,6 +660,122 @@
   .board-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .glow-green { text-shadow: 0 0 8px rgba(0,255,136,0.5); }
   .glow-cyan { text-shadow: 0 0 8px rgba(0,212,255,0.5); }
+
+  /* ─── WANDERING PIGLET ── */
+  .dash-pig {
+    position: fixed; z-index: 9999; pointer-events: none;
+    width: 42px; height: 33px;
+    filter: drop-shadow(0 0 6px rgba(255,107,189,0.5));
+  }
+  .dash-pig.flip { transform: scaleX(-1); }
+  .dash-pig .leg-a { display: block; }
+  .dash-pig .leg-b { display: none; }
+  .dash-pig.walk-frame .leg-a { display: none; }
+  .dash-pig.walk-frame .leg-b { display: block; }
+  .dash-pig .pig-tail {
+    animation: pig-tail-curl 0.6s ease-in-out infinite alternate;
+    transform-origin: 4px 12px;
+  }
+  .dash-pig .pig-ear-l { animation: pig-ear-wiggle 1.2s ease-in-out infinite alternate; transform-origin: 8px 6px; }
+  .dash-pig .pig-ear-r { animation: pig-ear-wiggle 1.2s ease-in-out infinite alternate 0.3s; transform-origin: 20px 6px; }
+  @keyframes pig-tail-curl { 0%{transform:rotate(-15deg)} 100%{transform:rotate(10deg)} }
+  @keyframes pig-ear-wiggle { 0%{transform:rotate(-6deg)} 100%{transform:rotate(6deg)} }
+
+  /* ─── NUZZLE BUTTON ── */
+  .nuzzle-btn {
+    background: none; border: 1px solid rgba(255,107,189,0.3); border-radius: 4px;
+    color: #ff6bbd; cursor: pointer; padding: 5px 8px; font-size: 11px;
+    font-family: inherit; transition: all 0.15s; line-height: 1;
+    white-space: nowrap;
+  }
+  .nuzzle-btn:hover { background: rgba(255,107,189,0.1); border-color: rgba(255,107,189,0.6); }
+  .nuzzle-btn:active { transform: scale(0.95); }
+
+  /* ─── STAGE MOVE CELEBRATION ── */
+  @keyframes stage-pulse {
+    0%   { box-shadow: inset 0 0 150px rgba(0,80,255,0.0), 0 0 0 0 transparent; }
+    15%  { box-shadow: inset 0 0 300px rgba(0,80,255,0.35), 0 0 120px rgba(0,80,255,0.15); }
+    35%  { box-shadow: inset 0 0 280px rgba(220,30,30,0.3), 0 0 100px rgba(220,30,30,0.12); }
+    50%  { box-shadow: inset 0 0 300px rgba(60,60,220,0.35), 0 0 120px rgba(60,60,220,0.15); }
+    65%  { box-shadow: inset 0 0 280px rgba(200,20,60,0.3), 0 0 100px rgba(200,20,60,0.12); }
+    80%  { box-shadow: inset 0 0 300px rgba(0,100,255,0.35), 0 0 120px rgba(0,100,255,0.15); }
+    100% { box-shadow: inset 0 0 150px rgba(0,80,255,0.0), 0 0 0 0 transparent; }
+  }
+  @keyframes text-color-cycle {
+    0%   { color: var(--text); text-shadow: none; }
+    15%  { color: #4488ff; text-shadow: 0 0 20px rgba(0,80,255,0.8), 0 0 40px rgba(0,80,255,0.3); }
+    35%  { color: #ff3344; text-shadow: 0 0 20px rgba(255,50,50,0.8), 0 0 40px rgba(255,50,50,0.3); }
+    50%  { color: #6666ff; text-shadow: 0 0 20px rgba(80,80,255,0.8), 0 0 40px rgba(80,80,255,0.3); }
+    65%  { color: #ff2244; text-shadow: 0 0 20px rgba(255,30,60,0.8), 0 0 40px rgba(255,30,60,0.3); }
+    80%  { color: #3399ff; text-shadow: 0 0 20px rgba(0,120,255,0.8), 0 0 40px rgba(0,120,255,0.3); }
+    100% { color: var(--text); text-shadow: none; }
+  }
+  @keyframes border-glow-cycle {
+    0%   { border-color: rgba(0,80,255,0.15); box-shadow: 0 0 8px transparent; }
+    20%  { border-color: rgba(0,80,255,0.8); box-shadow: 0 0 25px rgba(0,80,255,0.4); }
+    40%  { border-color: rgba(220,30,30,0.8); box-shadow: 0 0 25px rgba(220,30,30,0.4); }
+    60%  { border-color: rgba(60,60,220,0.8); box-shadow: 0 0 25px rgba(60,60,220,0.4); }
+    80%  { border-color: rgba(200,20,60,0.8); box-shadow: 0 0 25px rgba(200,20,60,0.4); }
+    100% { border-color: rgba(0,80,255,0.15); box-shadow: 0 0 8px transparent; }
+  }
+  @keyframes bg-flash {
+    0%   { opacity: 0; }
+    8%   { opacity: 1; }
+    20%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+  body.stage-move-celebrating::after {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, rgba(0,60,255,0.2) 0%, transparent 70%);
+    pointer-events: none; z-index: 9999;
+    animation: bg-flash 2s ease-out 1;
+  }
+  body.stage-move-celebrating {
+    animation: stage-pulse 3s ease-in-out 10 !important;
+  }
+  body.stage-move-celebrating .card-name,
+  body.stage-move-celebrating .brand-title,
+  body.stage-move-celebrating .metric-val,
+  body.stage-move-celebrating .col-title,
+  body.stage-move-celebrating .col-meta,
+  body.stage-move-celebrating .closest-name,
+  body.stage-move-celebrating .closest-days,
+  body.stage-move-celebrating .ticker-item {
+    animation: text-color-cycle 3s ease-in-out 10 !important;
+  }
+  body.stage-move-celebrating .card {
+    animation: border-glow-cycle 3s ease-in-out 10 !important;
+  }
+  body.stage-move-celebrating .header,
+  body.stage-move-celebrating .subheader,
+  body.stage-move-celebrating .col-header {
+    animation: border-glow-cycle 3s ease-in-out 10 !important;
+  }
+  /* ─── WANDERING CAT ── */
+  .dash-cat {
+    position: fixed; z-index: 9999; pointer-events: none;
+    width: 42px; height: 33px;
+    filter: drop-shadow(0 0 6px rgba(0,212,255,0.5));
+  }
+  .dash-cat.flip { transform: scaleX(-1); }
+  /* Walk frame toggle — JS toggles .walk-frame every 150ms */
+  .dash-cat .leg-a { display: block; }
+  .dash-cat .leg-b { display: none; }
+  .dash-cat.walk-frame .leg-a { display: none; }
+  .dash-cat.walk-frame .leg-b { display: block; }
+  .dash-cat.sitting .leg-a, .dash-cat.sitting .leg-b { display: none; }
+  .dash-cat.sitting .leg-sit { display: block !important; }
+  .dash-cat .leg-sit { display: none; }
+  .dash-cat .cat-tail {
+    animation: tail-wag 0.5s ease-in-out infinite alternate;
+    transform-origin: 3px 8px;
+  }
+  .dash-cat.sitting .cat-tail {
+    animation: tail-wag-slow 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes tail-wag { 0%{transform:rotate(-12deg)} 100%{transform:rotate(12deg)} }
+  @keyframes tail-wag-slow { 0%{transform:rotate(-6deg)} 100%{transform:rotate(6deg)} }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
@@ -667,6 +827,8 @@
     <div class="clock-date" id="clock-date">--- --- --</div>
   </div>
   <div class="header-divider"></div>
+  <button class="nuzzle-btn" onclick="forceNuzzle()" title="Force Nuzzle">🐷💕🐱</button>
+  <div class="header-divider" style="height:28px"></div>
   <button class="cat-bomb-btn" onclick="catBomb()" title="">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-3 6c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm6 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-3 8.5c-2 0-3.7-1-4.5-2.5h9c-.8 1.5-2.5 2.5-4.5 2.5z"/>
@@ -719,6 +881,16 @@
       <div class="info-handoff-item"><span class="info-handoff-num">#2</span><span class="info-handoff-text info-handoff-flag">Prod→Gen: ⚠ NEB Academy</span></div>
       <div class="info-handoff-item"><span class="info-handoff-num">#3</span><span class="info-handoff-text">Gen→Prod: GoGo Running exp. today</span></div>
       <div class="info-handoff-item"><span class="info-handoff-num">#4</span><span class="info-handoff-text info-handoff-flag">Prod→Sales: ⚠ 3 closing rpts</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MEETINGS STRIP ── -->
+<div class="meetings-strip">
+  <div class="meetings-label">📅 Client Meetings</div>
+  <div class="meetings-scroll">
+    <div class="meetings-ticker" id="meetings-scroll">
+      <div class="meetings-empty">Loading...</div>
     </div>
   </div>
 </div>
@@ -1369,7 +1541,8 @@ function renderTasks() {
     });
   });
 
-  list.innerHTML = html;
+  // Wrap in inner div and duplicate for seamless loop
+  list.innerHTML = `<div class="task-list-inner">${html}${html}</div>`;
 }
 
 function fireConfetti(el) {
@@ -1500,7 +1673,58 @@ function buildCompletePill(item) {
   </div>`;
 }
 
+// ── STAGE MOVE DETECTION ──
+let prevCardColumns = {}; // { cardId: 'Creative Brief', ... }
+let prevMovesKey = '';    // fingerprint of last seen recentMoves
+let celebrationTimer = null;
+
+function detectStageMoves(data) {
+  // Method 1: Compare card column positions between refreshes
+  let movedByPosition = false;
+  const newPositions = {};
+  Object.entries(data.columns).forEach(([colName, cards]) => {
+    cards.forEach(c => {
+      newPositions[c.id] = colName;
+      if (liveDataLoaded && prevCardColumns[c.id] && prevCardColumns[c.id] !== colName) {
+        movedByPosition = true;
+      }
+    });
+  });
+  prevCardColumns = newPositions;
+
+  // Method 2: Check if recentMoves changed since last refresh
+  let movedByTicker = false;
+  if (data.recentMoves && data.recentMoves.length) {
+    const key = data.recentMoves.map(m => m.name + m.from + m.to + m.date).join('|');
+    if (liveDataLoaded && prevMovesKey && key !== prevMovesKey) {
+      movedByTicker = true;
+    }
+    prevMovesKey = key;
+  }
+
+  return movedByPosition || movedByTicker;
+}
+
+function triggerStageCelebration() {
+  if (celebrationTimer) clearTimeout(celebrationTimer);
+  document.body.classList.remove('stage-move-celebrating');
+  // Force reflow so animation restarts if already active
+  void document.body.offsetWidth;
+  document.body.classList.add('stage-move-celebrating');
+  console.log('[CELEBRATE] Stage move detected — 10s celebration started');
+  celebrationTimer = setTimeout(() => {
+    document.body.classList.remove('stage-move-celebrating');
+    celebrationTimer = null;
+    console.log('[CELEBRATE] Celebration ended');
+  }, 30000);
+}
+// Expose for testing: run triggerStageCelebration() in browser console
+window.triggerStageCelebration = triggerStageCelebration;
+
 function applyLiveData(data) {
+  // Detect stage moves before updating DOM
+  const hasMoves = detectStageMoves(data);
+
   // Update each workflow column
   Object.entries(COLUMN_IDS).forEach(([colName, colId]) => {
     const col = document.getElementById(colId);
@@ -1613,6 +1837,9 @@ function applyLiveData(data) {
     if (syncSpan) syncSpan.textContent = `Last synced: ${age}s ago`;
   }
 
+  // ── Stage move celebration ──
+  if (hasMoves) triggerStageCelebration();
+
   liveDataLoaded = true;
 }
 
@@ -1629,9 +1856,72 @@ async function fetchLiveData() {
   }
 }
 
+// ── Meetings ──
+const MEETINGS_API = (API_URL || '').replace('/api/board-data', '') + '/api/meetings';
+
+function fmtMeetingTime(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  const dt = new Date(d); dt.setHours(0,0,0,0);
+  const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  if (dt.getTime() === today.getTime()) return `Today ${timeStr}`;
+  if (dt.getTime() === tomorrow.getTime()) return `Tomorrow ${timeStr}`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + timeStr;
+}
+
+async function fetchMeetings() {
+  try {
+    const res = await fetch(MEETINGS_API);
+    if (!res.ok) return;
+    const data = await res.json();
+    const el = document.getElementById('meetings-scroll');
+    if (!el) return;
+    const meetings = data.meetings || [];
+    if (!meetings.length) {
+      el.style.animation = 'none';
+      el.innerHTML = '<div class="meetings-empty">No upcoming client meetings in next 14 days</div>';
+      return;
+    }
+    const separator = '<div class="meeting-dot" style="width:20px;height:1px;background:rgba(0,212,255,0.15);border-radius:1px;margin:0 4px"></div>';
+    const pills = meetings.map(m => {
+      const who = m.kartelAttendees && m.kartelAttendees.length
+        ? m.kartelAttendees.map(e => e.split('.')[0]).join(', ')
+        : '';
+      const ext = m.externalAttendees && m.externalAttendees.length
+        ? m.externalAttendees.slice(0, 2).join(', ') + (m.externalAttendees.length > 2 ? ` +${m.externalAttendees.length - 2}` : '')
+        : '';
+      const shortTitle = m.title.length > 36 ? m.title.slice(0, 34) + '…' : m.title;
+      const link = m.link ? `href="${m.link}" target="_blank"` : '';
+      const pastStyle = m.past ? 'opacity:0.45;' : '';
+      const pastBadge = m.past ? '<span style="font-size:8px;color:#4a6a85;margin-right:2px">✓</span>' : '';
+      return `<a class="meeting-pill" ${link} style="text-decoration:none;${pastStyle}flex-shrink:0">
+        ${pastBadge}<span class="meeting-time">${fmtMeetingTime(m.start)}</span>
+        <div class="meeting-dot"></div>
+        <span class="meeting-title">${shortTitle}</span>
+        ${who ? `<div class="meeting-dot"></div><span class="meeting-who">${who}</span>` : ''}
+        ${ext ? `<div class="meeting-dot"></div><span class="meeting-who" style="color:var(--accent2)">${ext}</span>` : ''}
+      </a>`;
+    }).join(separator);
+    // Duplicate for seamless loop
+    el.innerHTML = pills + separator + pills;
+    // Match bottom ticker speed: 60px/s
+    requestAnimationFrame(() => {
+      el.style.animationDuration = (el.scrollWidth / 2 / 60) + 's';
+    });
+  } catch(e) {
+    console.warn('[MEETINGS] fetch error:', e.message);
+  }
+}
+
 // Boot live sync
 fetchLiveData();
+// TEST: auto-trigger celebration on load (remove after testing)
+setTimeout(triggerStageCelebration, 1500);
+fetchMeetings();
 setInterval(fetchLiveData, REFRESH_MS);
+setInterval(fetchMeetings, 5 * 60 * 1000);
 
 // ── TABBED DRAWER ──
 function switchTab(tab) {
@@ -1646,6 +1936,324 @@ function switchTab(tab) {
   }
 }
 
+// ── WANDERING CAT ──
+(function() {
+  const cat = document.createElement('div');
+  cat.className = 'dash-cat';
+  cat.innerHTML = `<svg viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- tail -->
+    <path class="cat-tail" d="M3,12 Q-1,6 2,4 Q4,2 5,5" stroke="#00d4ff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- body -->
+    <ellipse cx="14" cy="13" rx="8" ry="4.5" fill="#1a2a3a"/>
+    <ellipse cx="14" cy="13" rx="8" ry="4.5" stroke="#00d4ff" stroke-width="0.5" fill="none" opacity="0.6"/>
+    <!-- head -->
+    <circle cx="21" cy="9" r="4.5" fill="#1a2a3a"/>
+    <circle cx="21" cy="9" r="4.5" stroke="#00d4ff" stroke-width="0.5" fill="none" opacity="0.6"/>
+    <!-- ears -->
+    <polygon points="17.5,5.5 19,1 20.5,5" fill="#1a2a3a" stroke="#00d4ff" stroke-width="0.5" opacity="0.8"/>
+    <polygon points="22,5 23.5,1 25,5.5" fill="#1a2a3a" stroke="#00d4ff" stroke-width="0.5" opacity="0.8"/>
+    <polygon points="18.2,5.2 19,2.5 19.8,5" fill="#00d4ff" opacity="0.15"/>
+    <polygon points="22.5,4.8 23.5,2.5 24.3,5.2" fill="#00d4ff" opacity="0.15"/>
+    <!-- eyes -->
+    <ellipse cx="19.5" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
+    <ellipse cx="19.5" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
+    <ellipse cx="23" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
+    <ellipse cx="23" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
+    <!-- nose -->
+    <polygon points="20.8,10.2 21.5,10.2 21.15,10.8" fill="#ff6b9d"/>
+    <!-- walk frame A: legs down -->
+    <g class="leg-a">
+      <line x1="10" y1="16.5" x2="9" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="13" y1="17" x2="14" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="16" y1="17" x2="15" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="19" y1="16.5" x2="20" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+    <!-- walk frame B: legs stride -->
+    <g class="leg-b">
+      <line x1="10" y1="16.5" x2="7" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="13" y1="17" x2="15.5" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="16" y1="17" x2="13.5" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="19" y1="16.5" x2="22" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+    <!-- sit frame: tucked legs -->
+    <g class="leg-sit">
+      <ellipse cx="11" cy="17" rx="2.5" ry="1.5" fill="#1a2a3a" stroke="#00d4ff" stroke-width="0.4" opacity="0.6"/>
+      <ellipse cx="18" cy="17" rx="2.5" ry="1.5" fill="#1a2a3a" stroke="#00d4ff" stroke-width="0.4" opacity="0.6"/>
+    </g>
+  </svg>`;
+  document.body.appendChild(cat);
+
+  // Find walkable lines (bottom borders of key UI elements)
+  function getWalkLines() {
+    const lines = [];
+    const els = ['.header', '.subheader', '.info-strip', '.col-header', '.drawer-tabs'];
+    els.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        const r = el.getBoundingClientRect();
+        lines.push(r.bottom - 30); // cat feet sit on the border
+      });
+    });
+    // Bottom of viewport
+    lines.push(window.innerHeight - 33);
+    return [...new Set(lines)].sort((a, b) => a - b);
+  }
+
+  let walkLines = getWalkLines();
+  window.addEventListener('resize', () => { walkLines = getWalkLines(); });
+  // Refresh lines periodically in case layout shifts
+  setInterval(() => { walkLines = getWalkLines(); }, 5000);
+
+  // State
+  let x = 100;
+  let y = walkLines[0] || 90;
+  let state = 'walking'; // walking, sitting
+  let direction = 1;
+  let speed = 0.7;
+  let stateTimer = 0;
+  let satDuration = 0;
+  let hasSatThisPass = false;
+
+  let lastLineY = -1;
+  let lastDirection = 0;
+
+  function enterFromEdge() {
+    // Pick a line we weren't just on
+    if (walkLines.length > 1) {
+      let newY;
+      do { newY = walkLines[Math.floor(Math.random() * walkLines.length)]; }
+      while (newY === lastLineY);
+      y = newY;
+    } else if (walkLines.length === 1) {
+      y = walkLines[0];
+    }
+    lastLineY = y;
+
+    // Randomize entry side — avoid same direction twice in a row
+    if (lastDirection === 0) {
+      direction = Math.random() > 0.5 ? 1 : -1;
+    } else {
+      // 70% chance to flip direction, 30% same
+      direction = Math.random() < 0.7 ? -lastDirection : lastDirection;
+    }
+    lastDirection = direction;
+
+    x = direction === 1 ? -30 : window.innerWidth + 10;
+    speed = 0.4 + Math.random() * 0.6;
+    state = 'walking';
+    hasSatThisPass = false;
+    cat.classList.remove('sitting');
+    cat.classList.toggle('flip', direction < 0);
+    cat.style.display = '';
+  }
+
+  function updateCat(dt) {
+    stateTimer += dt;
+
+    if (state === 'walking') {
+      x += direction * speed;
+      cat.classList.toggle('flip', direction < 0);
+
+      // Maybe sit once mid-crossing (20% chance, only once per pass, only in middle 60% of screen)
+      if (!hasSatThisPass && x > window.innerWidth * 0.2 && x < window.innerWidth * 0.8) {
+        if (Math.random() < 0.0008) { // low per-frame chance
+          state = 'sitting';
+          satDuration = 2000 + Math.random() * 3000;
+          stateTimer = 0;
+          hasSatThisPass = true;
+          cat.classList.add('sitting');
+        }
+      }
+
+      // Walked off screen — enter on a new line
+      if (x > window.innerWidth + 40 || x < -40) {
+        enterFromEdge();
+        return;
+      }
+    }
+    else if (state === 'sitting') {
+      if (stateTimer > satDuration) {
+        cat.classList.remove('sitting');
+        state = 'walking';
+      }
+    }
+
+    cat.style.left = x + 'px';
+    cat.style.top = y + 'px';
+  }
+
+  // Walk frame animation
+  setInterval(() => {
+    if (state !== 'sitting') cat.classList.toggle('walk-frame');
+  }, 150);
+
+  // Start from an edge
+  enterFromEdge();
+
+  let lastTime = performance.now();
+  function loop(now) {
+    const dt = now - lastTime;
+    lastTime = now;
+    updateCat(dt);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+
+// ── WANDERING PIGLET ──
+(function() {
+  const pig = document.createElement('div');
+  pig.className = 'dash-pig';
+  pig.id = 'dash-pig';
+  pig.innerHTML = `<svg viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs><filter id="glow-pink"><feGaussianBlur stdDeviation="0.8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <g filter="url(#glow-pink)">
+      <path class="pig-tail" d="M3,11 Q-1,9 0,6 Q1,3 3,5 Q4,7 2,8" stroke="#ff6bbd" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="14" cy="13" rx="8" ry="4.5" fill="#2a1020"/>
+      <ellipse cx="14" cy="13" rx="8" ry="4.5" stroke="#ff6bbd" stroke-width="0.5" fill="none" opacity="0.7"/>
+      <circle cx="21" cy="9.5" r="4.8" fill="#2a1020"/>
+      <circle cx="21" cy="9.5" r="4.8" stroke="#ff6bbd" stroke-width="0.5" fill="none" opacity="0.7"/>
+      <ellipse class="pig-ear-l" cx="18" cy="5.5" rx="2.2" ry="2.8" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.85" transform="rotate(-15 18 5.5)"/>
+      <ellipse class="pig-ear-l" cx="18" cy="5.5" rx="1.2" ry="1.6" fill="#ff6bbd" opacity="0.12" transform="rotate(-15 18 5.5)"/>
+      <ellipse class="pig-ear-r" cx="24" cy="5.5" rx="2.2" ry="2.8" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.85" transform="rotate(15 24 5.5)"/>
+      <ellipse class="pig-ear-r" cx="24" cy="5.5" rx="1.2" ry="1.6" fill="#ff6bbd" opacity="0.12" transform="rotate(15 24 5.5)"/>
+      <ellipse cx="19.5" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
+      <ellipse cx="19.5" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
+      <ellipse cx="23" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
+      <ellipse cx="23" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
+      <ellipse cx="21.2" cy="11.5" rx="2.3" ry="1.6" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.9"/>
+      <ellipse cx="20.3" cy="11.6" rx="0.5" ry="0.4" fill="#ff6bbd" opacity="0.5"/>
+      <ellipse cx="22.1" cy="11.6" rx="0.5" ry="0.4" fill="#ff6bbd" opacity="0.5"/>
+      <g class="leg-a">
+        <line x1="10" y1="16.5" x2="9" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="13" y1="17" x2="14" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="16" y1="17" x2="15" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="19" y1="16.5" x2="20" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <ellipse cx="9" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        <ellipse cx="14" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        <ellipse cx="15" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        <ellipse cx="20" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+      </g>
+      <g class="leg-b">
+        <line x1="10" y1="16.5" x2="7" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="13" y1="17" x2="15.5" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="16" y1="17" x2="13.5" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="19" y1="16.5" x2="22" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+        <ellipse cx="7" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        <ellipse cx="15.5" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        <ellipse cx="13.5" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        <ellipse cx="22" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+      </g>
+    </g>
+  </svg>`;
+  document.body.appendChild(pig);
+
+  function getPigWalkLines() {
+    const lines = [];
+    ['.header', '.subheader', '.info-strip', '.col-header', '.drawer-tabs'].forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        lines.push(el.getBoundingClientRect().bottom - 30);
+      });
+    });
+    lines.push(window.innerHeight - 33);
+    return [...new Set(lines)].sort((a, b) => a - b);
+  }
+
+  let pigLines = getPigWalkLines();
+  window.addEventListener('resize', () => { pigLines = getPigWalkLines(); });
+  setInterval(() => { pigLines = getPigWalkLines(); }, 5000);
+
+  let px = window.innerWidth * 0.6;
+  let py = pigLines[pigLines.length - 1] || (window.innerHeight - 33);
+  let pDir = -1;
+  let pSpeed = 0.5 + Math.random() * 0.4;
+  let pLastLineY = py;
+  let pLastDir = 0;
+  let pNuzzling = false;
+
+  function pigEnterFromEdge() {
+    if (pigLines.length > 1) {
+      let ny;
+      do { ny = pigLines[Math.floor(Math.random() * pigLines.length)]; } while (ny === pLastLineY);
+      py = ny;
+    } else {
+      py = pigLines[0] || (window.innerHeight - 33);
+    }
+    pLastLineY = py;
+    pDir = pLastDir === 0 ? (Math.random() > 0.5 ? 1 : -1) : (Math.random() < 0.7 ? -pLastDir : pLastDir);
+    pLastDir = pDir;
+    px = pDir === 1 ? -30 : window.innerWidth + 10;
+    pSpeed = 0.4 + Math.random() * 0.5;
+    pig.classList.remove('walk-frame');
+    pig.classList.toggle('flip', pDir < 0);
+  }
+
+  function updatePig(dt) {
+    if (pNuzzling) return;
+    px += pDir * pSpeed;
+    pig.classList.toggle('flip', pDir < 0);
+    if (px > window.innerWidth + 40 || px < -40) pigEnterFromEdge();
+    pig.style.left = px + 'px';
+    pig.style.top = py + 'px';
+  }
+
+  setInterval(() => { if (!pNuzzling) pig.classList.toggle('walk-frame'); }, 150);
+
+  pigEnterFromEdge();
+  let pLastTime = performance.now();
+  function pigLoop(now) {
+    updatePig(now - pLastTime);
+    pLastTime = now;
+    requestAnimationFrame(pigLoop);
+  }
+  requestAnimationFrame(pigLoop);
+
+  // Expose for force nuzzle
+  window._pigState = { get x() { return px; }, get y() { return py; },
+    set x(v) { px = v; }, set y(v) { py = v; },
+    get nuzzling() { return pNuzzling; }, set nuzzling(v) { pNuzzling = v; },
+    el: pig
+  };
+})();
+
+// ── FORCE NUZZLE ──
+function forceNuzzle() {
+  const catEl  = document.querySelector('.dash-cat');
+  const pigEl  = document.getElementById('dash-pig');
+  const pigSt  = window._pigState;
+  if (!catEl || !pigEl || !pigSt) return;
+
+  // Parse current cat position from style
+  const catX = parseFloat(catEl.style.left) || window.innerWidth / 3;
+  const catY = parseFloat(catEl.style.top)  || window.innerHeight - 33;
+
+  // Lock both into nuzzle state
+  pigSt.nuzzling = true;
+
+  // Move piglet to sit right next to the cat
+  const meetX = catX + 48;
+  const meetY = catY;
+  pigEl.style.transition = 'left 0.6s ease, top 0.4s ease';
+  pigEl.style.left = meetX + 'px';
+  pigEl.style.top  = meetY + 'px';
+  pigSt.x = meetX; pigSt.y = meetY;
+
+  // Both sit / stop walking
+  catEl.classList.add('sitting');
+  pigEl.classList.remove('walk-frame');
+
+  // Hearts burst ✨
+  if (window.confetti) {
+    confetti({ particleCount: 40, spread: 50, origin: { x: (catX + 20) / window.innerWidth, y: catY / window.innerHeight },
+      colors: ['#ff6bbd','#00d4ff','#ff8fd4','#00ff88'], shapes: ['circle'], scalar: 0.8 });
+  }
+
+  // Release after 3.5s
+  setTimeout(() => {
+    pigEl.style.transition = '';
+    catEl.classList.remove('sitting');
+    pigSt.nuzzling = false;
+  }, 3500);
+}
 </script>
 </body>
 </html>

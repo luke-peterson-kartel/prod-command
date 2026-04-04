@@ -9,12 +9,14 @@ const https   = require('https');
 const fs      = require('fs');
 const path    = require('path');
 const crypto  = require('crypto');
+const { exec } = require('child_process');
 
 const AT_KEY = process.env.AIRTABLE_KEY ||
   (() => { try { return fs.readFileSync(process.env.HOME + '/.config/airtable/api_key', 'utf8').trim(); } catch(e) { return ''; } })();
-const BASE_ID = 'appRBFRW3pZ7rUDFh';
-const TABLE_ID = 'tblCrQJIBuXscN4tq';
-const VIEW_ID  = 'viwAAn6Xd4o6yw1Tc';
+const BASE_ID           = 'appRBFRW3pZ7rUDFh';
+const TABLE_ID          = 'tblCrQJIBuXscN4tq';
+const VIEW_ID           = 'viwAAn6Xd4o6yw1Tc';
+const MILESTONES_TABLE  = 'tblN6kEQxeiNJtBDR';
 const PORT = process.env.PORT || 7341;
 
 // ── Google OAuth config ────────────────────────────────────────
@@ -162,8 +164,12 @@ const COLUMNS = [
 let teamMembers = {};
 let clients = {};
 let artists = {};
-let cachedBoardData = null;
-let lastFetch = 0;
+let cachedArtistData     = null;
+let cachedBoardData      = null;
+let cachedMilestonesData = null;
+let lastFetch            = 0;
+let milestonesLastFetch  = 0;
+const MILESTONES_TTL_MS  = 2 * 60 * 1000; // 2-min cache
 
 // ── Recent moves tracker ───────────────────────────────────────
 const MOVES_FILE = path.join(__dirname, 'recent-moves.json');
@@ -182,6 +188,83 @@ const MOVE_COLORS = {
 let recentMoves = [];
 let prevPlacement = {}; // cardId → { col, name }
 let isFirstPoll = true;
+
+// ── Project Overview (Google Sheet) ───────────────────────────
+const OVERVIEW_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1wKobLrHuL6SXcyW8Xo-rQLBnQklSh-9d_Ega5cmZhzc/gviz/tq?tqx=out:csv&sheet=PROJECT+OVERVIEW';
+let cachedOverviewData = null;
+let overviewLastFetch = 0;
+const OVERVIEW_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function fetchOverviewData() {
+  return new Promise((resolve, reject) => {
+    https.get(OVERVIEW_SHEET_URL, res => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        https.get(res.headers.location, res2 => {
+          let data = '';
+          res2.on('data', c => data += c);
+          res2.on('end', () => resolve(parseOverviewCSV(data)));
+        }).on('error', reject);
+        return;
+      }
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(parseOverviewCSV(data)));
+    }).on('error', reject);
+  });
+}
+
+function parseOverviewCSV(csv) {
+  const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
+  const projects = [];
+  let headerRowIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes('PROJECTS') && lines[i].includes('PRODUCER')) { headerRowIndex = i; break; }
+  }
+  if (headerRowIndex === -1) return { projects, fetchedAt: new Date().toISOString() };
+  for (let i = headerRowIndex + 1; i < lines.length; i++) {
+    const cols = parseCSVRow(lines[i]);
+    if (!cols[0] || cols[0].startsWith('"') === false && cols[0] === '') continue;
+    const name = cols[0] || '';
+    if (!name) continue;
+    projects.push({
+      name,
+      producer:        cols[1] || '',
+      artist1:         cols[2] || '',
+      artist2:         cols[3] || '',
+      artist3:         cols[4] || '',
+      editor:          cols[5] || '',
+      motionGraphics:  cols[6] || '',
+      output:          cols[7] || '',
+      budget:          cols[8] || '',
+      status:          cols[9] || '',
+    });
+  }
+  return { projects, fetchedAt: new Date().toISOString() };
+}
+
+function parseCSVRow(line) {
+  const result = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; continue; }
+    if (ch === ',' && !inQuote) { result.push(cur.trim()); cur = ''; continue; }
+    cur += ch;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+async function refreshOverviewIfNeeded() {
+  if (Date.now() - overviewLastFetch < OVERVIEW_TTL_MS && cachedOverviewData) return;
+  try {
+    cachedOverviewData = await fetchOverviewData();
+    overviewLastFetch = Date.now();
+    console.log(`[OVERVIEW] Fetched ${cachedOverviewData.projects.length} projects from sheet`);
+  } catch(e) {
+    console.error('[OVERVIEW] Fetch error:', e.message);
+  }
+}
 
 function loadMoves() {
   try {
@@ -356,6 +439,10 @@ async function buildBoardData() {
       finalDelivery: f['Final Delivery (Actual)'] || null,
       driveLink: f['Data Link'] || null,
       artists: artistList,
+      prodStatus: prodStatus || '',
+      projectStatus: status || '',
+      budget: f['Budget'] || '',
+      deliverables: f['Deliverable(s)'] || '',
     };
 
     if (!prodStatus || prodStatus === '') {
@@ -397,17 +484,233 @@ async function buildBoardData() {
   };
 }
 
+// ── Meetings: calendar poll ────────────────────────────────────
+const MEETING_CALENDARS = [
+  'wayan@kartel.ai',
+  'veronica@kartel.ai',
+  'monica@kartel.ai',
+  'brandon@kartel.ai',
+  'estefania@kartel.ai',
+];
+const KARTEL_DOMAIN = 'kartel.ai';
+let cachedMeetings = [];
+let meetingsLastFetch = 0;
+
+function execAsync(cmd) {
+  return new Promise((resolve) => {
+    exec(cmd, { timeout: 15000 }, (err, stdout) => {
+      if (err) { resolve(null); return; }
+      try { resolve(JSON.parse(stdout)); } catch(e) { resolve(null); }
+    });
+  });
+}
+
+function isClientMeeting(evt) {
+  if (!evt || evt.status === 'cancelled') return false;
+  // Skip all-day events
+  if (evt.start && evt.start.date && !evt.start.dateTime) return false;
+  const attendees = evt.attendees || [];
+  // Must have at least one external (non-kartel.ai) attendee
+  const hasExternal = attendees.some(a => a.email && !a.email.endsWith('@' + KARTEL_DOMAIN) && !a.email.includes('resource.calendar.google.com'));
+  if (!hasExternal) return false;
+  // At least one kartel.ai attendee must not have declined
+  const kartelAttending = attendees.filter(a => a.email && a.email.endsWith('@' + KARTEL_DOMAIN) && a.responseStatus !== 'declined');
+  if (kartelAttending.length === 0) return false;
+  return true;
+}
+
+async function pollMeetings() {
+  try {
+    const seen = new Set();
+    const results = [];
+    const now = new Date();
+    const startOfToday = new Date(now); startOfToday.setHours(0,0,0,0);
+
+    await Promise.all(MEETING_CALENDARS.map(async (cal) => {
+      const data = await execAsync(`gog cal list ${cal} --days 14 -j 2>/dev/null`);
+      if (!data || !Array.isArray(data.events)) return;
+      for (const evt of data.events) {
+        if (!evt.id || seen.has(evt.id)) continue;
+        if (!isClientMeeting(evt)) continue;
+        const startDt = evt.start && (evt.start.dateTime || evt.start.date);
+        if (!startDt || new Date(startDt) < startOfToday) continue;
+        seen.add(evt.id);
+        const attendees = evt.attendees || [];
+        const kartelPeople = attendees
+          .filter(a => a.email && a.email.endsWith('@' + KARTEL_DOMAIN) && a.responseStatus !== 'declined')
+          .map(a => a.email.split('@')[0]);
+        const externalPeople = attendees
+          .filter(a => a.email && !a.email.endsWith('@' + KARTEL_DOMAIN) && !a.email.includes('resource.calendar.google.com') && a.responseStatus !== 'declined')
+          .map(a => {
+            if (a.displayName) return a.displayName;
+            // Convert email to readable name: "radhika.viswanath@jiostar.com" → "Radhika Viswanath"
+            const local = a.email.split('@')[0];
+            return local.split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          });
+        results.push({
+          id: evt.id,
+          title: evt.summary || '(No title)',
+          start: startDt,
+          end: evt.end && (evt.end.dateTime || evt.end.date),
+          location: evt.location || null,
+          kartelAttendees: kartelPeople,
+          externalAttendees: externalPeople,
+          organizer: evt.organizer ? (evt.organizer.displayName || evt.organizer.email) : null,
+          link: evt.htmlLink || null,
+          past: new Date(startDt) < now,
+        });
+      }
+    }));
+
+    results.sort((a, b) => new Date(a.start) - new Date(b.start));
+    cachedMeetings = results;
+    meetingsLastFetch = Date.now();
+    console.log(`[MEETINGS] ✓ ${results.length} upcoming client meetings found`);
+  } catch(e) {
+    console.error('[MEETINGS] Error:', e.message);
+  }
+  setTimeout(pollMeetings, 5 * 60 * 1000); // refresh every 5 min
+}
+
+// ── Artist capacity builder ────────────────────────────────────
+// Column logic: driven by "Availability Status" field (manually set in AirTable).
+// Null/missing → derive from project count. Values: OOO, At Capacity, Almost Full,
+// In the Multiverse (treated as Active), or blank (Available/Active by count).
+async function buildArtistData() {
+  const records = await fetchAllRecords('Artists');
+  const EXCLUDED = ['Rebecca Cook', 'Daniel Strange', 'Jason Goldwatch'];
+
+  // Canonical status values for column placement
+  const STATUS = {
+    AVAILABLE : 'Available',
+    ACTIVE    : 'Active',
+    ALMOST    : 'Almost Full',
+    FULL      : 'At Capacity',
+    OOO       : 'OOO',
+  };
+  const capOrder = {
+    [STATUS.FULL]     : 0,
+    [STATUS.ALMOST]   : 1,
+    [STATUS.ACTIVE]   : 2,
+    [STATUS.OOO]      : 3,
+    [STATUS.AVAILABLE]: 4,
+  };
+
+  const list = records
+    .map(r => {
+      const f = r.fields;
+      const name = f['Artist Name'] || '?';
+      if (EXCLUDED.includes(name)) return null;
+
+      const availRaw = (f['Availability Status'] || '').trim(); // manual field
+      const count    = typeof f['Project Count'] === 'number' ? f['Project Count'] : 0;
+      const max      = typeof f['Max Capacity']  === 'number' ? f['Max Capacity']  : 3;
+      const projectNames = Array.isArray(f['Active Projects']) ? f['Active Projects'] : [];
+
+      // Derive canonical status
+      let status;
+      if (availRaw === 'OOO') {
+        status = STATUS.OOO;
+      } else if (availRaw === 'At Capacity') {
+        status = STATUS.FULL;
+      } else if (availRaw === 'Almost Full') {
+        status = STATUS.ALMOST;
+      } else if (availRaw === 'In the Multiverse') {
+        status = STATUS.ACTIVE; // working, but outside main project tracking
+      } else {
+        // Fall back to count-based logic
+        if (max > 0 && count >= max)            status = STATUS.FULL;
+        else if (max > 0 && count >= max * 0.6) status = STATUS.ALMOST;
+        else if (count > 0)                     status = STATUS.ACTIVE;
+        else                                    status = STATUS.AVAILABLE;
+      }
+
+      return {
+        id: r.id,
+        name,
+        code:        f['Code']        || name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,3),
+        role:        f['Artist Role'] || 'Other',
+        recommended: f['Recommended?'] === true || f['Recommended?'] === 1,
+        availRaw,   // raw AirTable value for display
+        status,
+        count,
+        max,
+        pct: max > 0 ? Math.round((count / max) * 100) : 0,
+        projects: projectNames,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (capOrder[a.status] ?? 5) - (capOrder[b.status] ?? 5) || a.name.localeCompare(b.name));
+
+  const stats = {
+    total:      list.length,
+    available:  list.filter(a => a.status === STATUS.AVAILABLE).length,
+    active:     list.filter(a => a.status === STATUS.ACTIVE).length,
+    almostFull: list.filter(a => a.status === STATUS.ALMOST).length,
+    atCapacity: list.filter(a => a.status === STATUS.FULL).length,
+    ooo:        list.filter(a => a.status === STATUS.OOO).length,
+    roles:      [...new Set(list.map(a => a.role))].sort(),
+  };
+
+  return { artists: list, stats, fetchedAt: new Date().toISOString() };
+}
+
 // ── Poll loop ──────────────────────────────────────────────────
 async function poll() {
   try {
     console.log('[POLL] Fetching AirTable data...');
     cachedBoardData = await buildBoardData();
+    cachedArtistData = await buildArtistData();
     lastFetch = Date.now();
-    console.log(`[POLL] ✓ ${cachedBoardData.stats.activeEngagements} active, ${cachedBoardData.stats.benchCount} bench, ${cachedBoardData.stats.completeCount} complete`);
+    console.log(`[POLL] ✓ ${cachedBoardData.stats.activeEngagements} active, ${cachedBoardData.stats.benchCount} bench, ${cachedBoardData.stats.completeCount} complete | ${cachedArtistData.stats.available} artists available`);
   } catch(e) {
     console.error('[POLL] Error:', e.message);
   }
   setTimeout(poll, 60_000);
+}
+
+// ── Milestones data ────────────────────────────────────────────
+async function buildMilestonesData() {
+  const [milestoneRecs, projectRecs] = await Promise.all([
+    fetchAllRecords(MILESTONES_TABLE),
+    fetchAllRecords(TABLE_ID),           // fetch all fields so Project Name + Job ID are available
+  ]);
+
+  const projNames = {}, projJobs = {};
+  projectRecs.forEach(r => {
+    projNames[r.id] = r.fields['Project Name'] || r.fields['Name'] || '?';
+    projJobs[r.id]  = r.fields['Job ID'] || '';
+  });
+
+  const milestones = milestoneRecs.map(r => {
+    const f = r.fields;
+    const projectId = (f['Project'] || [])[0] || null;
+    const attendeeIds = f['Internal Attendees'] || [];
+    const attendeeNames = attendeeIds.map(id => teamMembers[id]?.name || id).filter(Boolean);
+    return {
+      id:                r.id,
+      name:              f['Name'] || f['Milestone Name'] || f['Phase'] || 'Untitled',
+      projectId,
+      projectName:       projectId ? (projNames[projectId] || 'Unknown') : 'Unknown',
+      projectJob:        projectId ? (projJobs[projectId] || '') : '',
+      phase:             f['Phase'] || '',
+      startDate:         f['Start Date'] || null,
+      dueDate:           f['Due Date'] || null,
+      status:            f['Status'] || 'Not Started',
+      internalAttendees: attendeeNames,
+      clientContacts:    f['Client Contacts'] || '',
+    };
+  });
+
+  // Sort: by projectName, then dueDate
+  milestones.sort((a, b) => {
+    const pc = a.projectName.localeCompare(b.projectName);
+    if (pc !== 0) return pc;
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    return 0;
+  });
+
+  return { milestones, fetchedAt: new Date().toISOString() };
 }
 
 // ── HTTP server ────────────────────────────────────────────────
@@ -416,6 +719,7 @@ const server = http.createServer(async (req, res) => {
 
   res.setHeader('Access-Control-Allow-Origin', AUTH_ENABLED ? BASE_URL : '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('ngrok-skip-browser-warning', '1');
 
   // ── Auth routes ──────────────────────────────────────────────
   if (url.pathname === '/auth/google') {
@@ -497,6 +801,12 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── API ──────────────────────────────────────────────────────
+  if (url.pathname === '/api/meetings') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ meetings: cachedMeetings, fetchedAt: new Date(meetingsLastFetch).toISOString() }));
+    return;
+  }
+
   if (url.pathname === '/api/board-data') {
     if (!cachedBoardData) {
       res.writeHead(503, { 'Content-Type': 'application/json' });
@@ -508,7 +818,89 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ── Static files ─────────────────────────────────────────────
+  if (url.pathname === '/api/overview') {
+    await refreshOverviewIfNeeded();
+    if (!cachedOverviewData) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Overview data not yet loaded' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ...cachedOverviewData, cacheAge: Math.round((Date.now() - overviewLastFetch) / 1000) }));
+    return;
+  }
+
+  if (url.pathname === '/api/artists') {
+    if (!cachedArtistData) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Artist data not yet loaded' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ...cachedArtistData, cacheAge: Math.round((Date.now() - lastFetch) / 1000) }));
+    return;
+  }
+
+  // PATCH /api/artists/:id — update artist fields back to AirTable
+  if (url.pathname.startsWith('/api/artists/') && req.method === 'PATCH') {
+    const recordId = url.pathname.split('/api/artists/')[1];
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { fields } = JSON.parse(body);
+        const atRes = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Artists/${recordId}`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${AT_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields }),
+        });
+        const atData = await atRes.json();
+        if (atData.error) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: atData.error }));
+        } else {
+          // Trigger a fresh artist data rebuild so the cache is current
+          cachedArtistData = await buildArtistData();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, record: atData, refreshed: true }));
+        }
+      } catch(e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ── /api/milestones ──────────────────────────────────────────
+  if (url.pathname === '/api/milestones') {
+    try {
+      const now = Date.now();
+      if (!cachedMilestonesData || now - milestonesLastFetch > MILESTONES_TTL_MS) {
+        cachedMilestonesData = await buildMilestonesData();
+        milestonesLastFetch = now;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ...cachedMilestonesData, cacheAge: Math.round((Date.now() - milestonesLastFetch) / 1000) }));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ── /sleep-demo — serve index.html with forceAsleep injected ──
+  if (url.pathname === '/sleep-demo') {
+    fs.readFile(path.join(__dirname, 'index.html'), 'utf8', (err, html) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      const injected = html.replace('window._klawPets = {};', 'window._klawPets = {}; window._forceAsleepOnLoad = true;');
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(injected);
+    });
+    return;
+  }
+
+// ── Static files ─────────────────────────────────────────────
   let filePath = path.join(__dirname, url.pathname === '/' ? 'index.html' : url.pathname).split('?')[0];
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
@@ -531,6 +923,8 @@ const server = http.createServer(async (req, res) => {
   loadMoves();
   console.log('[BOOT] Starting initial AirTable poll...');
   await poll().catch(console.error);
+  console.log('[BOOT] Starting initial meetings poll...');
+  pollMeetings().catch(console.error);
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`[BOOT] ✅ PROD Command server running → http://localhost:${PORT}`);
     console.log(`[BOOT] 🌐 Local network → http://172.18.62.28:${PORT}`);

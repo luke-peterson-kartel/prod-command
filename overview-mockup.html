@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Overview — Kartel Production</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #070b14; --bg2: #0c1120; --bg3: #111827; --card: #0d1526;
+    --accent: #00ff88; --accent2: #00d4ff; --purple: #a78bfa;
+    --amber: #f59e0b; --red: #ef4444;
+    --text: #e2eeff; --text2: #7a9bb5; --text3: #4a6a85;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 12px; }
+
+  .top-bar { display: flex; align-items: center; gap: 14px; padding: 16px 24px; border-bottom: 1px solid rgba(0,255,136,0.12); background: var(--bg2); }
+  .top-title { font-size: 13px; font-weight: 700; color: var(--purple); letter-spacing: 0.1em; }
+  .top-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+  .top-back { margin-left: auto; font-size: 10px; color: var(--text3); text-decoration: none; border: 1px solid rgba(255,255,255,0.08); padding: 5px 12px; border-radius: 4px; }
+  .top-back:hover { color: var(--text2); }
+  .top-refresh { font-size: 10px; color: var(--text3); background: none; border: 1px solid rgba(255,255,255,0.08); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .top-refresh:hover { color: var(--text2); }
+  .top-age { font-size: 9px; color: var(--text3); }
+
+  /* ── BADGES ── */
+  .badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.07em; white-space: nowrap; }
+  .b-active  { background: rgba(0,255,136,0.08); color: var(--accent); border: 1px solid rgba(0,255,136,0.2); }
+  .b-spec    { background: rgba(74,106,133,0.15); color: var(--text3); border: 1px solid rgba(74,106,133,0.25); }
+  .b-pipeline{ background: rgba(167,139,250,0.1); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+  .b-stage   { background: rgba(0,212,255,0.07); color: var(--accent2); border: 1px solid rgba(0,212,255,0.18); }
+  .b-done    { background: rgba(0,201,122,0.08); color: #00c97a; border: 1px solid rgba(0,201,122,0.2); }
+
+  /* ── AVATAR ── */
+  .av { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+
+  /* ── TABLE ── */
+  .roster { display: flex; flex-direction: column; padding: 0 0 40px; }
+  .r-header {
+    display: grid; grid-template-columns: 190px 160px 1fr 100px 220px;
+    gap: 12px; padding: 8px 24px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em; color: var(--text3);
+    border-bottom: 1px solid rgba(167,139,250,0.15);
+    position: sticky; top: 0; background: var(--bg2); z-index: 10;
+  }
+  .r-row {
+    display: grid; grid-template-columns: 190px 160px 1fr 100px 220px;
+    gap: 12px; padding: 11px 24px; align-items: start;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    border-left: 3px solid transparent; transition: background 0.1s;
+  }
+  .r-row:hover { background: rgba(255,255,255,0.02); }
+  .r-row.c-active   { border-left-color: var(--accent); }
+  .r-row.c-pipeline { border-left-color: var(--purple); }
+  .r-row.c-spec     { border-left-color: var(--text3); }
+  .r-row.c-done     { border-left-color: #00c97a; opacity: 0.6; }
+
+  .r-name { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 5px; line-height: 1.3; }
+  .r-meta { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; margin-bottom: 3px; }
+  .r-job  { font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+  .r-producer { display: flex; align-items: center; gap: 8px; }
+  .r-producer-name { font-size: 10px; color: var(--text2); }
+
+  .team-pills { display: flex; flex-direction: column; gap: 4px; }
+  .team-pill { display: flex; align-items: center; gap: 6px; }
+  .team-pill-name { font-size: 9px; color: var(--text2); }
+  .team-pill-role { font-size: 8px; color: var(--text3); }
+
+  .r-budget { font-size: 10px; font-weight: 600; color: var(--accent); }
+  .r-budget-none { font-size: 9px; color: var(--text3); font-style: italic; }
+  .r-status { font-size: 9px; color: var(--text2); line-height: 1.6; }
+  .r-status-date { font-size: 8px; color: var(--text3); margin-bottom: 2px; }
+  .r-status-none { font-size: 9px; color: var(--text3); font-style: italic; }
+
+  .r-stage { font-size: 9px; color: var(--accent2); margin-top: 3px; }
+
+  /* ── SECTION LABELS ── */
+  .sec-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--text3);
+    padding: 16px 24px 6px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .sec-label:first-child { border-top: none; }
+
+  /* ── LOADING / ERROR ── */
+  .loading { padding: 40px 24px; color: var(--text3); font-size: 11px; }
+  .error   { padding: 40px 24px; color: var(--red); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">📋 PROJECT OVERVIEW</div>
+    <div class="top-sub" id="top-sub">Loading...</div>
+  </div>
+  <button class="top-refresh" onclick="loadOverview()">↺ Refresh</button>
+  <span class="top-age" id="top-age"></span>
+  <a class="top-back" href="/">← Board</a>
+</div>
+
+<div class="roster" id="roster">
+  <div class="loading">⟳ Loading live data from AirTable...</div>
+</div>
+
+<script>
+const STAGE_ORDER = ['Creative Brief','LookDev','Storyboard','Animatic','Rough Cut','Fine Cut','Final Delivery'];
+
+function stageClass(prodStatus) {
+  if (!prodStatus) return 'c-spec';
+  if (prodStatus === 'Complete') return 'c-done';
+  return 'c-active';
+}
+
+function avatarHtml(name, bg, fg) {
+  const initials = name ? name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() : '?';
+  return `<div class="av" style="background:${bg || '#1a2030'};color:${fg || '#7a9bb5'}">${initials}</div>`;
+}
+
+function renderRow(card, col) {
+  const cls = stageClass(card.prodStatus);
+  const producer = card.producer || {};
+  const producerName = typeof producer === 'string' ? producer : (producer.name || '—');
+  const producerBg = producer.bg || '#1a2030';
+  const producerFg = producer.fg || '#7a9bb5';
+
+  const stage = card.prodStatus && card.prodStatus !== 'N/A' ? card.prodStatus : (col || '');
+  const stageBadge = stage ? `<span class="badge b-stage">${stage}</span>` : '';
+  const typeBadge = card.projectType ? `<span class="badge b-spec" style="font-size:8px">${card.projectType}</span>` : '';
+
+  const teamHtml = (card.artists || []).map(a =>
+    `<div class="team-pill">
+      <div class="av" style="background:#1a2030;color:#7a9bb5;width:18px;height:18px;font-size:7px">${(a.code || a.name.split(' ').map(w=>w[0]).join('')).slice(0,3)}</div>
+      <span class="team-pill-name">${a.name}</span>
+      <span class="team-pill-role">· ${a.role || ''}</span>
+    </div>`
+  ).join('') || '<span style="font-size:9px;color:var(--text3)">—</span>';
+
+  let statusHtml;
+  if (card.scrumNote) {
+    statusHtml = `
+      ${card.scrumDate ? `<div class="r-status-date">${card.scrumDate}</div>` : ''}
+      <div class="r-status">${card.scrumNote}</div>`;
+  } else {
+    statusHtml = `<div class="r-status-none">No SCRUM note</div>`;
+  }
+
+  const budgetHtml = card.budget
+    ? `<div class="r-budget">${card.budget}</div>`
+    : `<div class="r-budget-none">—</div>`;
+
+  return `
+    <div class="r-row ${cls}">
+      <div>
+        <div class="r-name">${card.name || '—'}</div>
+        <div class="r-meta">${stageBadge}${typeBadge}</div>
+        ${card.jobId ? `<div class="r-job">${card.jobId}${card.client ? ' · ' + card.client : ''}</div>` : (card.client ? `<div class="r-job">${card.client}</div>` : '')}
+      </div>
+      <div class="r-producer">
+        ${avatarHtml(producerName, producerBg, producerFg)}
+        <span class="r-producer-name">${producerName}</span>
+      </div>
+      <div class="team-pills">${teamHtml}</div>
+      <div>${budgetHtml}</div>
+      <div>${statusHtml}</div>
+    </div>`;
+}
+
+async function loadOverview() {
+  const roster = document.getElementById('roster');
+  roster.innerHTML = '<div class="loading">⟳ Fetching live data...</div>';
+  document.getElementById('top-age').textContent = '';
+
+  try {
+    const res = await fetch('/api/board-data');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const sections = [];
+
+    // Active pipeline — in stage order
+    const activeByStageName = {};
+    for (const [col, cards] of Object.entries(data.columns || {})) {
+      if (cards && cards.length) activeByStageName[col] = cards;
+    }
+
+    const activeRows = [];
+    for (const stage of STAGE_ORDER) {
+      const cards = activeByStageName[stage] || [];
+      for (const card of cards) activeRows.push({ card, col: stage });
+    }
+
+    if (activeRows.length) {
+      sections.push(`<div class="sec-label">🟢 &nbsp;ACTIVE PRODUCTION — ${activeRows.length} project${activeRows.length !== 1 ? 's' : ''}</div>`);
+      sections.push(...activeRows.map(({ card, col }) => renderRow(card, col)));
+    }
+
+    // Bench
+    const bench = (data.bench || []).filter(c => !c.benchStatus || c.benchStatus !== 'COMPLETE');
+    if (bench.length) {
+      sections.push(`<div class="sec-label">⏸ &nbsp;PIPELINE BENCH — ${bench.length} project${bench.length !== 1 ? 's' : ''}</div>`);
+      sections.push(...bench.map(c => renderRow(c, '')));
+    }
+
+    // Complete (last 10)
+    const complete = (data.complete || []).slice(0, 10);
+    if (complete.length) {
+      sections.push(`<div class="sec-label">✅ &nbsp;RECENTLY COMPLETED — ${complete.length} shown</div>`);
+      sections.push(...complete.map(c => renderRow(c, 'Complete')));
+    }
+
+    const total = activeRows.length + bench.length;
+    document.getElementById('top-sub').textContent = `${total} active projects · staffing & SCRUM status`;
+
+    const age = data.cacheAge != null ? `Data ${data.cacheAge}s old` : '';
+    document.getElementById('top-age').textContent = age;
+
+    roster.innerHTML = `
+      <div class="r-header">
+        <div>PROJECT</div>
+        <div>PRODUCER</div>
+        <div>TEAM</div>
+        <div>BUDGET</div>
+        <div>STATUS (SCRUM)</div>
+      </div>
+      ${sections.join('')}`;
+
+  } catch(e) {
+    roster.innerHTML = `<div class="error">⚠ Failed to load: ${e.message}</div>`;
+  }
+}
+
+loadOverview();
+setInterval(loadOverview, 5 * 60 * 1000); // refresh every 5 min
+</script>
+</body>
+</html>
