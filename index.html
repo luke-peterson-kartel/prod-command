@@ -675,8 +675,8 @@
 
   /* ─── WANDERING PIGLET ── */
   .dash-pig {
-    position: fixed; z-index: 9999; pointer-events: none;
-    width: 42px; height: 33px;
+    position: fixed; z-index: 9999; pointer-events: auto;
+    width: 42px; height: 33px; cursor: pointer;
     filter: drop-shadow(0 0 6px rgba(255,107,189,0.5));
   }
   .dash-pig.flip { transform: scaleX(-1); }
@@ -775,8 +775,8 @@
   }
   /* ─── WANDERING CAT ── */
   .dash-cat {
-    position: fixed; z-index: 9999; pointer-events: none;
-    width: 42px; height: 33px;
+    position: fixed; z-index: 9999; pointer-events: auto;
+    width: 42px; height: 33px; cursor: pointer;
     filter: drop-shadow(0 0 6px rgba(0,212,255,0.5));
   }
   .dash-cat.flip { transform: scaleX(-1); }
@@ -797,6 +797,35 @@
   }
   @keyframes tail-wag { 0%{transform:rotate(-12deg)} 100%{transform:rotate(12deg)} }
   @keyframes tail-wag-slow { 0%{transform:rotate(-6deg)} 100%{transform:rotate(6deg)} }
+
+  /* ─── CAT CLICK: BUTTERFLY ─── */
+  .butterfly {
+    position: fixed; z-index: 10001; pointer-events: none;
+    font-size: 18px; line-height: 1;
+    animation: bf-wing 0.12s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 4px rgba(255,220,50,0.6));
+    transition: left 0.05s linear, top 0.05s linear;
+  }
+  @keyframes bf-wing { 0%{transform:scaleX(1) rotate(-8deg)} 100%{transform:scaleX(0.25) rotate(8deg)} }
+  .butterfly.fly-away { transition: left 1s ease-in, top 0.8s ease-in, opacity 0.6s ease !important; }
+
+  /* ─── PIG CLICK: MUD PUDDLE ─── */
+  .mud-puddle {
+    position: fixed; border-radius: 50%; pointer-events: none; z-index: 9997;
+    background: radial-gradient(ellipse, rgba(80,50,20,0.75) 0%, rgba(90,60,25,0.4) 55%, transparent 100%);
+    transform-origin: center;
+    animation: puddle-in 0.35s ease-out forwards;
+  }
+  @keyframes puddle-in { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  .mud-splat {
+    position: fixed; width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(90,58,20,0.85); pointer-events: none; z-index: 9999;
+    animation: splat-out var(--dur,0.45s) ease-out forwards;
+  }
+  @keyframes splat-out {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx,0px),var(--ty,0px)) scale(0.25); opacity: 0; }
+  }
 
   /* ─── SLEEP MODE ─── */
   @keyframes sleep-breathe {
@@ -2280,6 +2309,12 @@ function switchTab(tab) {
     el: cat,
     enterFromEdge
   };
+
+  // Click → butterfly
+  cat.addEventListener('click', (e) => {
+    e.stopPropagation();
+    spawnButterfly(cat, window._catState);
+  });
 })();
 
 // ── WANDERING PIGLET ──
@@ -2396,7 +2431,103 @@ function switchTab(tab) {
     get nuzzling() { return pNuzzling; }, set nuzzling(v) { pNuzzling = v; },
     el: pig
   };
+
+  // Click → mud puddle
+  pig.addEventListener('click', (e) => {
+    e.stopPropagation();
+    spawnMudPuddle(pig, window._pigState);
+  });
 })();
+
+// ── CAT CLICK: BUTTERFLY ──
+function spawnButterfly(catEl, catSt) {
+  if (catSt.nuzzling || isSleeping) return;
+  catSt.nuzzling = true;
+  catEl.classList.add('sitting');
+
+  const ox = parseFloat(catEl.style.left) || 100;
+  const oy = parseFloat(catEl.style.top)  || 100;
+
+  const bf = document.createElement('div');
+  bf.className = 'butterfly';
+  bf.textContent = '🦋';
+  bf.style.left = (ox + 28) + 'px';
+  bf.style.top  = (oy - 18) + 'px';
+  document.body.appendChild(bf);
+
+  // Figure-8 orbit around the cat
+  let t = 0;
+  const loopId = setInterval(() => {
+    t += 0.045;
+    bf.style.left = (ox + 22 + Math.sin(t) * 32)      + 'px';
+    bf.style.top  = (oy - 14 + Math.sin(t * 2) * 14)  + 'px';
+  }, 16);
+
+  // After 3.5s, butterfly flies off top-right and cat wakes
+  setTimeout(() => {
+    clearInterval(loopId);
+    bf.classList.add('fly-away');
+    bf.style.left    = (window.innerWidth + 60) + 'px';
+    bf.style.top     = '-60px';
+    bf.style.opacity = '0';
+    setTimeout(() => bf.remove(), 1100);
+    catEl.classList.remove('sitting');
+    catSt.nuzzling = false;
+  }, 3600);
+}
+
+// ── PIG CLICK: MUD PUDDLE ──
+function spawnMudPuddle(pigEl, pigSt) {
+  if (pigSt.nuzzling || isSleeping) return;
+  pigSt.nuzzling = true;
+
+  const px = parseFloat(pigEl.style.left) || 100;
+  const py = parseFloat(pigEl.style.top)  || 100;
+
+  // Puddle under pig
+  const puddle = document.createElement('div');
+  puddle.className = 'mud-puddle';
+  puddle.style.cssText = `left:${px - 22}px;top:${py + 14}px;width:86px;height:26px;`;
+  document.body.appendChild(puddle);
+
+  // Mud splatter particles
+  for (let i = 0; i < 10; i++) {
+    setTimeout(() => {
+      const s = document.createElement('div');
+      s.className = 'mud-splat';
+      const angle = (i / 10) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const dist  = 20 + Math.random() * 22;
+      s.style.cssText = [
+        `left:${px + 18}px`, `top:${py + 18}px`,
+        `--tx:${(Math.cos(angle) * dist).toFixed(1)}px`,
+        `--ty:${(Math.sin(angle) * dist - 12).toFixed(1)}px`,
+        `--dur:${(0.35 + Math.random() * 0.3).toFixed(2)}s`,
+      ].join(';');
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 800);
+    }, i * 40);
+  }
+
+  // Pig bounces in place
+  let bounce = 0;
+  const bounceId = setInterval(() => {
+    bounce++;
+    pigEl.style.top = (py + (bounce % 2 === 0 ? -4 : 4)) + 'px';
+    pigEl.classList.toggle('walk-frame');
+    if (bounce >= 14) {
+      clearInterval(bounceId);
+      pigEl.style.top = py + 'px';
+    }
+  }, 110);
+
+  // Clean up after 3.5s
+  setTimeout(() => {
+    puddle.style.transition = 'opacity 0.6s ease';
+    puddle.style.opacity = '0';
+    setTimeout(() => puddle.remove(), 650);
+    pigSt.nuzzling = false;
+  }, 3600);
+}
 
 // ── FORCE NUZZLE ──
 function forceNuzzle() {
