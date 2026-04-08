@@ -798,6 +798,53 @@
   }
   @keyframes tail-wag { 0%{transform:rotate(-12deg)} 100%{transform:rotate(12deg)} }
   @keyframes tail-wag-slow { 0%{transform:rotate(-6deg)} 100%{transform:rotate(6deg)} }
+
+  /* ─── SLEEP MODE ─── */
+  @keyframes sleep-breathe {
+    0%, 100% { transform: rotate(90deg) scaleX(1);    }
+    50%       { transform: rotate(90deg) scaleX(0.87); }
+  }
+  @keyframes sleep-breathe-pig {
+    0%, 100% { transform: rotate(90deg) scaleX(1);    }
+    50%       { transform: rotate(90deg) scaleX(0.87); }
+  }
+  @keyframes wake-stretch {
+    0%   { transform: rotate(90deg) scaleX(0.87); }
+    35%  { transform: rotate(22deg) scaleX(1.18) scaleY(0.88); }
+    65%  { transform: rotate(-6deg) scaleX(0.94) scaleY(1.06); }
+    85%  { transform: rotate(3deg) scaleX(1.02); }
+    100% { transform: rotate(0deg) scaleX(1) scaleY(1); }
+  }
+  .dash-cat.sleeping {
+    animation: sleep-breathe 3s ease-in-out infinite !important;
+    filter: drop-shadow(0 0 5px rgba(0,212,255,0.2)) !important;
+  }
+  .dash-pig.sleeping {
+    animation: sleep-breathe-pig 3.4s ease-in-out infinite !important;
+    filter: drop-shadow(0 0 5px rgba(255,107,189,0.2)) !important;
+  }
+  .dash-cat.sleeping .leg-a, .dash-cat.sleeping .leg-b { display: none !important; }
+  .dash-cat.sleeping .leg-sit { display: block !important; }
+  .dash-pig.sleeping .leg-a,  .dash-pig.sleeping .leg-b  { display: none !important; }
+  .dash-cat.stretching, .dash-pig.stretching {
+    animation: wake-stretch 1.3s ease-out forwards !important;
+  }
+  /* ─── ZZZ FLOATERS ─── */
+  .sleep-zzz {
+    position: fixed;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 10000;
+    text-shadow: 0 0 6px currentColor;
+    animation: zzz-float 2.8s ease-out forwards;
+  }
+  @keyframes zzz-float {
+    0%   { opacity: 0; transform: translateY(0)    scale(0.6) rotate(-10deg); }
+    14%  { opacity: 1; }
+    80%  { opacity: 0.85; }
+    100% { opacity: 0; transform: translateY(-55px) scale(1.1)  rotate(10deg); }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
@@ -1948,27 +1995,98 @@ async function fetchMeetings() {
   }
 }
 
-// ── SLEEP MODE (6pm–8am) ──
-function updateSleepMode() {
-  const hour = new Date().getHours();
-  const shouldSleep = hour >= 18 || hour < 8;
+// ── SLEEP MODE (6pm–9:30am) ──
+let sleepZzzInterval = null;
+let isSleeping = false;
+
+function spawnZzz() {
+  const pairs = [
+    [window._catState && window._catState.el, '#00d4ff'],
+    [document.getElementById('dash-pig'),     '#ff6bbd']
+  ];
+  pairs.forEach(([el, color], i) => {
+    if (!el) return;
+    // Stagger slightly so cat and pig zzz's don't spawn at exact same time
+    setTimeout(() => {
+      const x = parseFloat(el.style.left) || 100;
+      const y = parseFloat(el.style.top)  || 200;
+      const z = document.createElement('div');
+      z.className = 'sleep-zzz';
+      const size = 9 + Math.floor(Math.random() * 5);
+      const text = ['z', 'zz', 'zzz'][Math.floor(Math.random() * 3)];
+      z.style.cssText = `font-size:${size}px;color:${color};left:${x + 12 + (Math.random()-0.5)*8}px;top:${y - 2}px;`;
+      z.textContent = text;
+      document.body.appendChild(z);
+      setTimeout(() => z.remove(), 2900);
+    }, i * 600);
+  });
+}
+
+function enterSleepMode() {
+  if (isSleeping) return;
+  isSleeping = true;
   const catEl = window._catState && window._catState.el;
   const pigEl = document.getElementById('dash-pig');
   const nuzzleBtn = document.querySelector('.nuzzle-btn');
 
-  if (shouldSleep) {
-    if (catEl) { catEl.style.opacity = '0'; setTimeout(() => { catEl.style.display = 'none'; }, 400); }
-    if (pigEl) { pigEl.style.opacity = '0'; setTimeout(() => { pigEl.style.display = 'none'; }, 400); }
-    if (nuzzleBtn) { nuzzleBtn.disabled = true; nuzzleBtn.title = 'Sleeping 💤 (back at 8am)'; nuzzleBtn.style.opacity = '0.35'; }
-  } else {
-    if (catEl) { catEl.style.display = ''; requestAnimationFrame(() => { catEl.style.opacity = ''; }); }
-    if (pigEl) { pigEl.style.display = ''; requestAnimationFrame(() => { pigEl.style.opacity = ''; }); }
-    if (nuzzleBtn) { nuzzleBtn.disabled = false; nuzzleBtn.title = 'Force Nuzzle'; nuzzleBtn.style.opacity = ''; }
-  }
+  // Freeze JS loops
+  if (window._catState) window._catState.nuzzling = true;
+  if (window._pigState) window._pigState.nuzzling = true;
+
+  // Lie down
+  if (catEl) { catEl.classList.remove('flip', 'sitting', 'walk-frame'); catEl.classList.add('sleeping'); }
+  if (pigEl) { pigEl.classList.remove('flip', 'walk-frame');            pigEl.classList.add('sleeping'); }
+
+  if (nuzzleBtn) { nuzzleBtn.disabled = true; nuzzleBtn.title = 'Sleeping 💤 (wakes at 9:30am)'; nuzzleBtn.style.opacity = '0.35'; }
+
+  // First zzz after short delay, then on interval
+  setTimeout(spawnZzz, 600);
+  sleepZzzInterval = setInterval(spawnZzz, 2400);
 }
-// Check on load and every minute
+
+function exitSleepMode() {
+  if (!isSleeping) return;
+  isSleeping = false;
+  const catEl = window._catState && window._catState.el;
+  const pigEl = document.getElementById('dash-pig');
+  const nuzzleBtn = document.querySelector('.nuzzle-btn');
+
+  // Kill zzz's
+  clearInterval(sleepZzzInterval);
+  sleepZzzInterval = null;
+  document.querySelectorAll('.sleep-zzz').forEach(z => z.remove());
+
+  // Stretch animation, then back to normal
+  if (catEl) {
+    catEl.classList.remove('sleeping');
+    catEl.classList.add('stretching');
+    setTimeout(() => catEl.classList.remove('stretching'), 1350);
+  }
+  if (pigEl) {
+    pigEl.classList.remove('sleeping');
+    pigEl.classList.add('stretching');
+    setTimeout(() => pigEl.classList.remove('stretching'), 1350);
+  }
+
+  if (nuzzleBtn) { nuzzleBtn.disabled = false; nuzzleBtn.title = 'Force Nuzzle'; nuzzleBtn.style.opacity = ''; }
+
+  // Resume walking after stretch completes
+  setTimeout(() => {
+    if (window._catState) window._catState.nuzzling = false;
+    if (window._pigState) window._pigState.nuzzling = false;
+  }, 1400);
+}
+
+function updateSleepMode() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  // Sleep: 6pm (18:00) through 9:29am. Wake: 9:30am.
+  const shouldSleep = h >= 18 || h < 9 || (h === 9 && m < 30);
+  if (shouldSleep && !isSleeping)  enterSleepMode();
+  else if (!shouldSleep && isSleeping) exitSleepMode();
+}
 updateSleepMode();
-setInterval(updateSleepMode, 60_000);
+setInterval(updateSleepMode, 30_000);
 
 // Boot live sync
 fetchLiveData();
