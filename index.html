@@ -27,14 +27,17 @@
     --col-purple-dim: rgba(129,140,248,0.1);
     --col-w: 0px; /* deprecated — columns now flex */
   }
+  html { height: 100%; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'JetBrains Mono', monospace;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh;
+    overflow: hidden;
     font-size: 12px;
+    display: flex;
+    flex-direction: column;
   }
 
   /* ─── NAV BAR ── */
@@ -110,7 +113,7 @@
   .subheader-alert span { color: var(--at-risk); font-weight: 600; }
 
   /* ─── MAIN ── */
-  .main { display: flex; height: calc(100vh - 92px - 56px - 138px - 28px); overflow: hidden; }
+  .main { display: flex; flex: 1; min-height: 0; overflow: hidden; padding-bottom: 176px; }
 
   /* ─── INFO STRIP ── */
   .info-strip {
@@ -808,6 +811,16 @@
   <a class="nav-btn" href="/overview-mockup.html" title="Project Overview">🗂 OVERVIEW</a>
   <a class="nav-btn" href="/capacity-mockup.html" title="Artist Tracking">👥 ARTISTS</a>
   <a class="nav-btn" href="/calendar.html" title="Calendar">📅 CALENDAR</a>
+  <div style="flex:1"></div>
+  <div class="nav-divider"></div>
+  <button class="nuzzle-btn" onclick="forceNuzzle()" title="Force Nuzzle" style="font-size:12px;padding:4px 10px;margin:0 6px;border-radius:3px;height:26px">🐷💕🐱</button>
+  <div class="nav-divider"></div>
+  <button class="cat-bomb-btn" onclick="catBomb()" title="Cat Bomb" style="margin:0 4px;padding:3px 7px">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-3 6c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm6 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-3 8.5c-2 0-3.7-1-4.5-2.5h9c-.8 1.5-2.5 2.5-4.5 2.5z"/>
+      <path d="M3 5L5 9M21 5L19 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </button>
 </div>
 
 <!-- ── HEADER ── -->
@@ -855,15 +868,6 @@
     <div class="clock glow-cyan" id="clock">--:--:--</div>
     <div class="clock-date" id="clock-date">--- --- --</div>
   </div>
-  <div class="header-divider"></div>
-  <button class="nuzzle-btn" onclick="forceNuzzle()" title="Force Nuzzle">🐷💕🐱</button>
-  <div class="header-divider" style="height:28px"></div>
-  <button class="cat-bomb-btn" onclick="catBomb()" title="">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-3 6c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm6 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-3 8.5c-2 0-3.7-1-4.5-2.5h9c-.8 1.5-2.5 2.5-4.5 2.5z"/>
-      <path d="M3 5L5 9M21 5L19 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>
-  </button>
 </div>
 
 <!-- ── CAT BOMB MODAL ── -->
@@ -1944,10 +1948,30 @@ async function fetchMeetings() {
   }
 }
 
+// ── SLEEP MODE (6pm–8am) ──
+function updateSleepMode() {
+  const hour = new Date().getHours();
+  const shouldSleep = hour >= 18 || hour < 8;
+  const catEl = window._catState && window._catState.el;
+  const pigEl = document.getElementById('dash-pig');
+  const nuzzleBtn = document.querySelector('.nuzzle-btn');
+
+  if (shouldSleep) {
+    if (catEl) { catEl.style.opacity = '0'; setTimeout(() => { catEl.style.display = 'none'; }, 400); }
+    if (pigEl) { pigEl.style.opacity = '0'; setTimeout(() => { pigEl.style.display = 'none'; }, 400); }
+    if (nuzzleBtn) { nuzzleBtn.disabled = true; nuzzleBtn.title = 'Sleeping 💤 (back at 8am)'; nuzzleBtn.style.opacity = '0.35'; }
+  } else {
+    if (catEl) { catEl.style.display = ''; requestAnimationFrame(() => { catEl.style.opacity = ''; }); }
+    if (pigEl) { pigEl.style.display = ''; requestAnimationFrame(() => { pigEl.style.opacity = ''; }); }
+    if (nuzzleBtn) { nuzzleBtn.disabled = false; nuzzleBtn.title = 'Force Nuzzle'; nuzzleBtn.style.opacity = ''; }
+  }
+}
+// Check on load and every minute
+updateSleepMode();
+setInterval(updateSleepMode, 60_000);
+
 // Boot live sync
 fetchLiveData();
-// TEST: auto-trigger celebration on load (remove after testing)
-setTimeout(triggerStageCelebration, 1500);
 fetchMeetings();
 setInterval(fetchLiveData, REFRESH_MS);
 setInterval(fetchMeetings, 5 * 60 * 1000);
@@ -1967,6 +1991,7 @@ function switchTab(tab) {
 
 // ── WANDERING CAT ──
 (function() {
+  let catNuzzling = false;
   const cat = document.createElement('div');
   cat.className = 'dash-cat';
   cat.innerHTML = `<svg viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2076,6 +2101,7 @@ function switchTab(tab) {
   }
 
   function updateCat(dt) {
+    if (catNuzzling) return;
     stateTimer += dt;
 
     if (state === 'walking') {
@@ -2126,6 +2152,16 @@ function switchTab(tab) {
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
+
+  // Expose state for forceNuzzle and sleep mode
+  window._catState = {
+    get x() { return x; }, set x(v) { x = v; },
+    get y() { return y; }, set y(v) { y = v; },
+    get nuzzling() { return catNuzzling; }, set nuzzling(v) { catNuzzling = v; },
+    get state() { return state; }, set state(v) { state = v; },
+    el: cat,
+    enterFromEdge
+  };
 })();
 
 // ── WANDERING PIGLET ──
@@ -2246,42 +2282,62 @@ function switchTab(tab) {
 
 // ── FORCE NUZZLE ──
 function forceNuzzle() {
-  const catEl  = document.querySelector('.dash-cat');
-  const pigEl  = document.getElementById('dash-pig');
-  const pigSt  = window._pigState;
-  if (!catEl || !pigEl || !pigSt) return;
+  const catSt = window._catState;
+  const pigSt = window._pigState;
+  if (!catSt || !pigSt) return;
+  if (catSt.nuzzling || pigSt.nuzzling) return; // already nuzzling
 
-  // Parse current cat position from style
-  const catX = parseFloat(catEl.style.left) || window.innerWidth / 3;
-  const catY = parseFloat(catEl.style.top)  || window.innerHeight - 33;
+  // Pick a meeting point roughly center-screen on the cat's current line
+  const meetY = catSt.y;
+  const meetX = Math.max(80, Math.min(window.innerWidth - 120, Math.round(window.innerWidth / 2) - 25));
+  const pigX  = meetX + 48;
 
-  // Lock both into nuzzle state
+  const catEl = catSt.el;
+  const pigEl = pigSt.el;
+
+  // Freeze both JS loops
+  catSt.nuzzling = true;
   pigSt.nuzzling = true;
 
-  // Move piglet to sit right next to the cat
-  const meetX = catX + 48;
-  const meetY = catY;
+  // Animate both to the meeting point
+  catEl.style.transition = 'left 0.5s ease, top 0.4s ease';
+  catEl.style.left = meetX + 'px';
+  catEl.style.top  = meetY + 'px';
+  catSt.x = meetX; catSt.y = meetY;
+
   pigEl.style.transition = 'left 0.6s ease, top 0.4s ease';
-  pigEl.style.left = meetX + 'px';
+  pigEl.style.left = pigX + 'px';
   pigEl.style.top  = meetY + 'px';
-  pigSt.x = meetX; pigSt.y = meetY;
+  pigSt.x = pigX; pigSt.y = meetY;
 
-  // Both sit / stop walking
-  catEl.classList.add('sitting');
-  pigEl.classList.remove('walk-frame');
+  // Face each other: cat default faces right, pig default faces right → flip pig to face left
+  catEl.classList.remove('flip');
+  pigEl.classList.add('flip');
 
-  // Hearts burst ✨
-  if (window.confetti) {
-    confetti({ particleCount: 40, spread: 50, origin: { x: (catX + 20) / window.innerWidth, y: catY / window.innerHeight },
-      colors: ['#ff6bbd','#00d4ff','#ff8fd4','#00ff88'], shapes: ['circle'], scalar: 0.8 });
-  }
-
-  // Release after 3.5s
+  // After travel, sit and do hearts
   setTimeout(() => {
+    catEl.style.transition = '';
     pigEl.style.transition = '';
+    catEl.classList.add('sitting');
+    pigEl.classList.remove('walk-frame');
+
+    if (window.confetti) {
+      confetti({
+        particleCount: 60, spread: 60,
+        origin: { x: (meetX + 46) / window.innerWidth, y: (meetY + 10) / window.innerHeight },
+        colors: ['#ff6bbd','#00d4ff','#ff8fd4','#00ff88','#ffffff'],
+        shapes: ['circle'], scalar: 0.85, startVelocity: 22, gravity: 1.2
+      });
+    }
+  }, 650);
+
+  // Release after 4.5s — both resume wandering
+  setTimeout(() => {
     catEl.classList.remove('sitting');
+    pigEl.classList.remove('flip');
+    catSt.nuzzling = false;
     pigSt.nuzzling = false;
-  }, 3500);
+  }, 4500);
 }
 </script>
 </body>
