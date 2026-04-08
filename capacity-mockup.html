@@ -52,7 +52,7 @@
   .capacity-board { display: flex; gap: 0; overflow-x: auto; min-height: calc(100vh - 160px); }
   .cap-col { display: flex; flex-direction: column; min-width: 280px; flex: 1; border-right: 1px solid rgba(255,255,255,.04); }
   .cap-col:last-child { border-right: none; }
-  .cap-col-header { padding: 12px 16px 10px; border-bottom: 1px solid rgba(255,255,255,.05); position: sticky; top: 72px; z-index: 10; background: var(--bg2); display: flex; align-items: center; justify-content: space-between; }
+  .cap-col-header { padding: 12px 16px 10px; border-bottom: 1px solid rgba(255,255,255,.05); position: sticky; top: 36px; z-index: 10; background: var(--bg2); display: flex; align-items: center; justify-content: space-between; }
   .cap-col-header.available  { border-top: 2px solid var(--accent);  background: rgba(0,255,136,.03); }
   .cap-col-header.active-col { border-top: 2px solid var(--accent2); background: rgba(0,212,255,.03); }
   .cap-col-header.almost     { border-top: 2px solid var(--at-risk); background: rgba(245,158,11,.03); }
@@ -104,6 +104,7 @@
   <span class="nav-brand">🟢 KLAW</span>
   <div class="nav-divider"></div>
   <a class="nav-btn" href="/">📋 BOARD</a>
+  <div style="flex:1"></div>
   <a class="nav-btn" href="/overview-mockup.html">🗂 OVERVIEW</a>
   <a class="nav-btn active" href="/capacity-mockup.html">👥 ARTISTS</a>
   <a class="nav-btn" href="/calendar.html">📅 CALENDAR</a>

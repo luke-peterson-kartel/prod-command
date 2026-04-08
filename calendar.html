@@ -10,59 +10,110 @@
     --bg: #070b14; --bg2: #0c1120; --bg3: #111827; --card: #0d1526; --card-hover: #131d30;
     --accent: #00ff88; --accent2: #00d4ff; --text: #e2eeff; --text2: #7a9bb5; --text3: #4a6a85;
     --border: rgba(0,255,136,0.15); --at-risk: #f59e0b; --overdue: #ef4444;
-    --col-purple: #818cf8;
+    --complete: #3a5a73; --awaiting: #818cf8;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 12px; }
 
-  /* ─── TOP NAV ── */
-  .top-nav { background: var(--bg2); border-bottom: 1px solid rgba(129,140,248,0.15); display: flex; align-items: center; padding: 0 20px; gap: 2px; position: sticky; top: 0; z-index: 101; height: 36px; }
+  /* ─── TOP NAV ─────────────────────────────────────────────── */
+  .top-nav { background: var(--bg2); border-bottom: 1px solid rgba(129,140,248,0.15); display: flex; align-items: center; padding: 0 20px; gap: 2px; position: sticky; top: 0; z-index: 200; height: 36px; }
   .nav-brand { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .12em; margin-right: 12px; white-space: nowrap; }
   .nav-btn { background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--text3); padding: 0 14px; height: 36px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: color .15s; white-space: nowrap; }
   .nav-btn:hover { color: var(--text2); }
   .nav-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
   .nav-divider { width: 1px; height: 16px; background: rgba(255,255,255,.06); margin: 0 4px; }
 
-  /* ─── HEADER ── */
-  .header { background: linear-gradient(180deg, #0a1020 0%, var(--bg2) 100%); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
+  /* ─── HEADER ───────────────────────────────────────────────── */
+  .header { background: linear-gradient(180deg,#0a1020 0%,var(--bg2) 100%); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
   .brand-title { font-size: 13px; font-weight: 700; color: var(--accent2); letter-spacing: .12em; }
   .brand-sub { font-size: 10px; color: var(--text2); margin-top: 2px; }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
   .refresh-btn { font-family: inherit; font-size: 10px; color: var(--text3); background: none; border: 1px solid rgba(255,255,255,.08); padding: 5px 12px; border-radius: 4px; cursor: pointer; }
   .refresh-btn:hover { color: var(--text2); }
+  .cache-label { font-size: 9px; color: var(--text3); }
 
-  /* ─── CONTENT ── */
-  .content { padding: 20px 24px; max-width: 900px; }
+  /* ─── MONTH NAV ─────────────────────────────────────────────── */
+  .month-nav { background: var(--bg2); border-bottom: 1px solid rgba(255,255,255,.04); padding: 10px 24px; display: flex; align-items: center; gap: 16px; }
+  .month-title { font-size: 14px; font-weight: 700; letter-spacing: .1em; color: var(--text); min-width: 200px; }
+  .nav-arrow { font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text3); background: none; border: 1px solid rgba(255,255,255,.08); border-radius: 4px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color .15s; }
+  .nav-arrow:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+  .today-btn { font-family: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--accent); background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.2); border-radius: 4px; padding: 4px 12px; cursor: pointer; }
+  .today-btn:hover { background: rgba(0,255,136,.14); }
+  .month-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
-  /* ─── DAY SECTION ── */
-  .day-section { margin-bottom: 28px; }
-  .day-label { font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--text3); padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.04); margin-bottom: 10px; }
-  .day-label.today { color: var(--accent); }
-  .day-label span { font-size: 11px; font-weight: 700; margin-right: 8px; }
+  /* ─── LEGEND ─────────────────────────────────────────────────── */
+  .legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text3); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 
-  /* ─── MEETING CARD ── */
-  .meeting-card { background: var(--card); border: 1px solid rgba(255,255,255,.06); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid var(--accent2); transition: background .15s; }
-  .meeting-card:hover { background: var(--card-hover); }
-  .meeting-card.past { opacity: 0.5; border-left-color: var(--text3); }
-  .meeting-card.now  { border-left-color: var(--accent); box-shadow: 0 0 0 1px rgba(0,255,136,.15); }
-  .meeting-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
-  .meeting-time-block { flex-shrink: 0; text-align: right; min-width: 64px; }
-  .meeting-time { font-size: 11px; font-weight: 700; color: var(--accent2); white-space: nowrap; }
-  .meeting-time.past { color: var(--text3); }
-  .meeting-time.now  { color: var(--accent); }
-  .meeting-duration { font-size: 9px; color: var(--text3); margin-top: 2px; }
-  .meeting-title { font-size: 12px; font-weight: 700; color: var(--text); flex: 1; line-height: 1.3; }
-  .meeting-where { font-size: 9px; color: var(--accent2); margin-top: 3px; }
-  .meeting-people { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-  .person-pill { font-size: 9px; color: var(--text2); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 2px 8px; }
-  .person-pill.kartel { color: var(--accent2); background: rgba(0,212,255,.06); border-color: rgba(0,212,255,.15); }
-  .person-pill.client { color: var(--at-risk); background: rgba(245,158,11,.06); border-color: rgba(245,158,11,.15); }
-  .now-badge { font-size: 8px; font-weight: 700; letter-spacing: .08em; color: var(--accent); background: rgba(0,255,136,.1); border: 1px solid rgba(0,255,136,.25); border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
-  .empty-day { font-size: 10px; color: var(--text3); font-style: italic; padding: 8px 4px; }
-  .loading-msg { padding: 40px 24px; color: var(--text3); font-size: 11px; }
-  .error-msg { padding: 40px 24px; color: var(--overdue); font-size: 11px; }
-  .link-btn { font-size: 9px; color: var(--col-purple); text-decoration: none; margin-top: 4px; display: inline-block; }
-  .link-btn:hover { color: var(--accent2); }
+  /* ─── CALENDAR GRID ──────────────────────────────────────────── */
+  .cal-wrap { padding: 0 20px 24px; overflow-x: auto; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); border-left: 1px solid rgba(255,255,255,.06); border-top: 1px solid rgba(255,255,255,.06); min-width: 840px; }
+
+  /* day-of-week headers */
+  .dow-header { background: var(--bg2); padding: 7px 10px; font-size: 9px; font-weight: 700; letter-spacing: .12em; color: var(--text3); text-align: center; border-right: 1px solid rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.06); text-transform: uppercase; }
+  .dow-header.weekend { color: rgba(74,106,133,.6); }
+
+  /* day cells */
+  .day-cell { background: var(--bg); border-right: 1px solid rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.06); padding: 8px 8px 10px; min-height: 110px; vertical-align: top; position: relative; transition: background .12s; }
+  .day-cell:hover { background: #090e1b; }
+  .day-cell.other-month { background: #060910; }
+  .day-cell.other-month .day-num { color: rgba(74,106,133,.35); }
+  .day-cell.weekend { background: #07091a; }
+  .day-cell.today { background: #081420 !important; outline: 2px solid var(--accent); outline-offset: -2px; }
+  .day-cell.has-overdue { background: rgba(239,68,68,.04); }
+
+  .day-num { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .today-badge { font-size: 8px; font-weight: 700; letter-spacing: .08em; color: var(--accent); background: rgba(0,255,136,.12); border: 1px solid rgba(0,255,136,.3); border-radius: 3px; padding: 1px 5px; }
+  .day-cell.today .day-num { color: var(--accent); }
+
+  /* milestone chips inside cells */
+  .ms-chip { border-radius: 3px; padding: 3px 6px; margin-bottom: 3px; font-size: 9px; font-weight: 600; line-height: 1.3; cursor: pointer; overflow: hidden; display: block; transition: opacity .12s; border-left: 2px solid transparent; }
+  .ms-chip-phase { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ms-chip-project { font-size: 8px; font-weight: 400; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .ms-chip:hover { opacity: .85; }
+  .ms-chip.c-complete   { background: rgba(58,90,115,.18); color: var(--complete); border-left-color: var(--complete); }
+  .ms-chip.c-inprogress { background: rgba(0,255,136,.1);  color: var(--accent);   border-left-color: var(--accent); }
+  .ms-chip.c-notstarted { background: rgba(122,155,181,.08); color: var(--text3); border-left-color: var(--text3); }
+  .ms-chip.c-awaiting   { background: rgba(129,140,248,.1); color: var(--awaiting); border-left-color: var(--awaiting); }
+  .ms-chip.c-overdue    { background: rgba(239,68,68,.12); color: var(--overdue);  border-left-color: var(--overdue); }
+  .ms-chip.c-atrisk     { background: rgba(245,158,11,.1); color: var(--at-risk);  border-left-color: var(--at-risk); }
+
+  .overflow-chip { font-size: 8px; color: var(--text3); padding: 2px 4px; cursor: pointer; }
+  .overflow-chip:hover { color: var(--text2); }
+
+  /* ─── DETAIL PANEL ────────────────────────────────────────────── */
+  .detail-overlay { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.55); }
+  .detail-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 360px; background: var(--bg2); border-left: 1px solid rgba(255,255,255,.1); z-index: 301; overflow-y: auto; padding: 0; box-shadow: -8px 0 32px rgba(0,0,0,.4); }
+  .detail-header { padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,255,255,.07); display: flex; align-items: flex-start; gap: 10px; position: sticky; top: 0; background: var(--bg2); z-index: 1; }
+  .detail-date { flex: 1; }
+  .detail-date-main { font-size: 13px; font-weight: 700; color: var(--text); }
+  .detail-date-sub  { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .detail-close { font-family: inherit; font-size: 16px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .detail-close:hover { color: var(--text); }
+  .detail-body { padding: 14px 18px; }
+  .detail-ms { background: var(--card); border: 1px solid rgba(255,255,255,.07); border-radius: 6px; padding: 12px 14px; margin-bottom: 10px; border-left: 3px solid var(--text3); }
+  .detail-ms.c-complete   { border-left-color: var(--complete); }
+  .detail-ms.c-inprogress { border-left-color: var(--accent); }
+  .detail-ms.c-notstarted { border-left-color: var(--text3); }
+  .detail-ms.c-awaiting   { border-left-color: var(--awaiting); }
+  .detail-ms.c-overdue    { border-left-color: var(--overdue); }
+  .detail-ms.c-atrisk     { border-left-color: var(--at-risk); }
+  .dm-phase   { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .dm-project { font-size: 10px; color: var(--text2); margin-bottom: 6px; }
+  .dm-row { display: flex; align-items: center; justify-content: space-between; }
+  .dm-job  { font-size: 9px; color: var(--text3); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 3px; padding: 2px 6px; }
+  .dm-badge { font-size: 8px; font-weight: 700; letter-spacing: .08em; border-radius: 3px; padding: 2px 6px; text-transform: uppercase; }
+  .badge-complete   { color: var(--complete);  background: rgba(58,90,115,.2);    border: 1px solid rgba(58,90,115,.35); }
+  .badge-inprogress { color: var(--accent);    background: rgba(0,255,136,.08);   border: 1px solid rgba(0,255,136,.2); }
+  .badge-notstarted { color: var(--text3);     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
+  .badge-awaiting   { color: var(--awaiting);  background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.2); }
+  .badge-overdue    { color: var(--overdue);   background: rgba(239,68,68,.08);   border: 1px solid rgba(239,68,68,.2); }
+  .badge-atrisk     { color: var(--at-risk);   background: rgba(245,158,11,.08);  border: 1px solid rgba(245,158,11,.2); }
+
+  /* ─── misc ──── */
+  .loading-msg { padding: 60px 24px; color: var(--text3); font-size: 11px; text-align: center; }
+  .error-msg   { padding: 40px 24px; color: var(--overdue); font-size: 11px; }
 </style>
 </head>
 <body>
@@ -72,6 +123,7 @@
   <span class="nav-brand">🟢 KLAW</span>
   <div class="nav-divider"></div>
   <a class="nav-btn" href="/">📋 BOARD</a>
+  <div style="flex:1"></div>
   <a class="nav-btn" href="/overview-mockup.html">🗂 OVERVIEW</a>
   <a class="nav-btn" href="/capacity-mockup.html">👥 ARTISTS</a>
   <a class="nav-btn active" href="/calendar.html">📅 CALENDAR</a>
@@ -81,134 +133,264 @@
 <div class="header">
   <div>
     <div class="brand-title">📅 PRODUCTION CALENDAR</div>
-    <div class="brand-sub" id="brand-sub">Loading...</div>
+    <div class="brand-sub" id="brand-sub">Loading milestones...</div>
   </div>
   <div class="header-right">
-    <button class="refresh-btn" onclick="loadCalendar()">↺ Refresh</button>
+    <span class="cache-label" id="cache-label"></span>
+    <button class="refresh-btn" onclick="loadCalendar(true)">↺ Refresh</button>
   </div>
 </div>
 
-<div class="content" id="content">
-  <div class="loading-msg">⟳ Loading calendar from Google Calendar...</div>
+<!-- ── MONTH NAV ── -->
+<div class="month-nav">
+  <button class="nav-arrow" onclick="shiftMonth(-1)">‹</button>
+  <div class="month-title" id="month-title">—</div>
+  <button class="nav-arrow" onclick="shiftMonth(1)">›</button>
+  <button class="today-btn" onclick="goToday()">TODAY</button>
+  <div class="month-nav-right">
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--overdue)"></div>Overdue</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--accent)"></div>In Progress</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--at-risk)"></div>At Risk</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--awaiting)"></div>Awaiting Client</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--text3)"></div>Not Started</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--complete)"></div>Complete</div>
+    </div>
+  </div>
+</div>
+
+<div id="cal-container">
+  <div class="loading-msg">⟳ Loading milestones from AirTable...</div>
+</div>
+
+<!-- ── DETAIL PANEL ── -->
+<div class="detail-overlay" id="overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel" style="display:none">
+  <div class="detail-header">
+    <div class="detail-date">
+      <div class="detail-date-main" id="detail-date-main">—</div>
+      <div class="detail-date-sub"  id="detail-date-sub">—</div>
+    </div>
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
 </div>
 
 <script>
-function fmt(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+let allMilestones = [];
+let viewYear, viewMonth; // 0-indexed month
+
+const DAYS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function todayLocal() {
+  const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
-function fmtDuration(start, end) {
-  if (!start || !end) return '';
-  const mins = Math.round((new Date(end) - new Date(start)) / 60000);
-  if (mins < 60) return `${mins}m`;
-  const h = Math.floor(mins / 60), m = mins % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
-}
-function dayKey(dateStr) {
-  const d = new Date(dateStr);
-  return d.toDateString();
-}
-function dayLabel(dateStr) {
-  const d = new Date(dateStr);
-  const today = new Date();
-  const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
-  const opts = { weekday: 'long', month: 'long', day: 'numeric' };
-  const base = d.toLocaleDateString('en-US', opts);
-  if (d.toDateString() === today.toDateString()) return { label: `TODAY · ${base}`, isToday: true };
-  if (d.toDateString() === tomorrow.toDateString()) return { label: `TOMORROW · ${base}`, isToday: false };
-  return { label: base, isToday: false };
-}
-function isPast(dateStr) {
-  return new Date(dateStr) < new Date();
-}
-function isNow(start, end) {
-  const now = new Date();
-  return new Date(start) <= now && new Date(end) >= now;
+function parseDate(str) {
+  if (!str) return null;
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m-1, d);
 }
 
-async function loadCalendar() {
-  const content = document.getElementById('content');
-  content.innerHTML = '<div class="loading-msg">⟳ Fetching calendar...</div>';
+function resolveStatus(ms) {
+  if (ms.status === 'Complete') return 'complete';
+  if (ms.status === 'Awaiting Client') return 'awaiting';
+  if (ms.dueDate) {
+    const d = parseDate(ms.dueDate), t = todayLocal();
+    if (d < t) return 'overdue';
+    const diff = Math.round((d - t) / 86400000);
+    if (diff <= 1) return 'atrisk';
+  }
+  if (ms.status === 'In Progress') return 'inprogress';
+  return 'notstarted';
+}
+
+const STATUS_LABEL = { complete:'Complete', inprogress:'In Progress', notstarted:'Not Started', awaiting:'Awaiting Client', overdue:'Overdue', atrisk:'At Risk' };
+const STATUS_ORDER = { overdue:0, atrisk:1, inprogress:2, awaiting:3, notstarted:4, complete:5 };
+
+function buildMsByDate() {
+  const map = {};
+  allMilestones.forEach(ms => {
+    if (!ms.dueDate) return;
+    const key = ms.dueDate; // 'YYYY-MM-DD'
+    if (!map[key]) map[key] = [];
+    map[key].push({ ...ms, _status: resolveStatus(ms) });
+  });
+  // Sort each day's milestones by status priority
+  Object.values(map).forEach(arr => arr.sort((a,b) => STATUS_ORDER[a._status] - STATUS_ORDER[b._status]));
+  return map;
+}
+
+function renderCalendar() {
+  const container = document.getElementById('cal-container');
+  const byDate = buildMsByDate();
+  const today  = todayLocal();
+
+  document.getElementById('month-title').textContent = `${MONTHS[viewMonth]} ${viewYear}`;
+
+  // First day of month, last day
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  const lastDay  = new Date(viewYear, viewMonth + 1, 0);
+  const startDow = firstDay.getDay(); // 0=Sun
+
+  let html = '<div class="cal-wrap"><div class="cal-grid">';
+
+  // Day-of-week headers
+  DAYS.forEach((d,i) => {
+    const wknd = (i===0||i===6) ? ' weekend' : '';
+    html += `<div class="dow-header${wknd}">${d}</div>`;
+  });
+
+  // Leading blank cells
+  for (let i = 0; i < startDow; i++) {
+    const date = new Date(viewYear, viewMonth, 1 - (startDow - i));
+    html += dayCell(date, byDate, today, true);
+  }
+
+  // Days of the month
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const date = new Date(viewYear, viewMonth, d);
+    html += dayCell(date, byDate, today, false);
+  }
+
+  // Trailing blank cells to complete the last row
+  const totalCells = startDow + lastDay.getDate();
+  const trailing = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= trailing; i++) {
+    const date = new Date(viewYear, viewMonth + 1, i);
+    html += dayCell(date, byDate, today, true);
+  }
+
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function dateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+function dayCell(date, byDate, today, otherMonth) {
+  const key   = dateKey(date);
+  const items = byDate[key] || [];
+  const isToday   = date.getTime() === today.getTime();
+  const isWeekend = date.getDay()===0 || date.getDay()===6;
+  const hasOverdue = items.some(m => m._status==='overdue');
+
+  let cls = 'day-cell';
+  if (otherMonth) cls += ' other-month';
+  else if (isWeekend) cls += ' weekend';
+  if (isToday)   cls += ' today';
+  if (hasOverdue && !otherMonth) cls += ' has-overdue';
+
+  const dateArg = JSON.stringify(key);
+  let inner = `<div class="day-num">${date.getDate()}${isToday ? '<span class="today-badge">TODAY</span>' : ''}</div>`;
+
+  const MAX_CHIPS = 3;
+  const visible = items.slice(0, MAX_CHIPS);
+  const overflow = items.length - MAX_CHIPS;
+
+  visible.forEach(ms => {
+    const phase   = ms.phase || ms.name || 'Milestone';
+    const project = ms.projectName || '';
+    inner += `<span class="ms-chip c-${ms._status}" onclick="openDetail(event,${dateArg})" title="${project} — ${phase}">
+      ${project ? `<div class="ms-chip-phase">${project}</div>` : ''}
+      <div class="ms-chip-project">${phase}</div>
+    </span>`;
+  });
+
+  if (overflow > 0) {
+    inner += `<span class="overflow-chip" onclick="openDetail(event,${dateArg})">+${overflow} more</span>`;
+  }
+
+  return `<div class="${cls}">${inner}</div>`;
+}
+
+function openDetail(e, dateStr) {
+  e.stopPropagation();
+  const byDate = buildMsByDate();
+  const items  = byDate[dateStr] || [];
+  const date   = parseDate(dateStr);
+  const today  = todayLocal();
+  const isToday = date.getTime() === today.getTime();
+
+  const opts = { weekday:'long', month:'long', day:'numeric', year:'numeric' };
+  document.getElementById('detail-date-main').textContent = date.toLocaleDateString('en-US', opts);
+  document.getElementById('detail-date-sub').textContent  = `${items.length} milestone${items.length!==1?'s':''} due${isToday?' · TODAY':''}`;
+
+  let html = '';
+  if (!items.length) {
+    html = '<div style="font-size:10px;color:var(--text3);padding:8px 0">No milestones due this day.</div>';
+  } else {
+    items.forEach(ms => {
+      const s = ms._status;
+      html += `<div class="detail-ms c-${s}">
+        <div class="dm-phase">${ms.phase || ms.name || 'Milestone'}</div>
+        <div class="dm-project">${ms.projectName || '—'}</div>
+        <div class="dm-row">
+          ${ms.projectJob ? `<span class="dm-job">${ms.projectJob}</span>` : '<span></span>'}
+          <span class="dm-badge badge-${s}">${STATUS_LABEL[s]||s}</span>
+        </div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('detail-body').innerHTML = html;
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('detail-panel').style.display = 'block';
+}
+
+function closeDetail() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('detail-panel').style.display = 'none';
+}
+
+function shiftMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0;  viewYear++; }
+  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  renderCalendar();
+}
+
+function goToday() {
+  const t = todayLocal();
+  viewYear  = t.getFullYear();
+  viewMonth = t.getMonth();
+  renderCalendar();
+}
+
+async function loadCalendar(force) {
   try {
-    const res = await fetch('/api/meetings');
+    const url = force ? '/api/milestones?bust=' + Date.now() : '/api/milestones';
+    const res  = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const meetings = data.meetings || [];
+    allMilestones = data.milestones || [];
 
-    document.getElementById('brand-sub').textContent =
-      `${meetings.length} event${meetings.length !== 1 ? 's' : ''} · Production calendars`;
+    const total   = allMilestones.length;
+    const active  = allMilestones.filter(m => m.status !== 'Complete').length;
+    const overdue = allMilestones.filter(m => resolveStatus(m) === 'overdue').length;
+    document.getElementById('brand-sub').textContent  = `${total} milestones · ${active} active · ${overdue} overdue · AirTable`;
+    document.getElementById('cache-label').textContent = data.cacheAge != null ? `cache ${data.cacheAge}s old` : '';
 
-    if (!meetings.length) {
-      content.innerHTML = '<div class="empty-day">No upcoming meetings found. Check that Google Calendar is connected and calendars are shared to prod@kartel.ai.</div>';
-      return;
-    }
-
-    // Group by day
-    const byDay = {};
-    const dayOrder = [];
-    meetings.forEach(m => {
-      const start = m.start || m.startTime;
-      if (!start) return;
-      const key = dayKey(start);
-      if (!byDay[key]) { byDay[key] = []; dayOrder.push(key); }
-      byDay[key].push(m);
-    });
-
-    let html = '';
-    dayOrder.forEach(dayK => {
-      const evts = byDay[dayK];
-      const firstStart = evts[0].start || evts[0].startTime;
-      const { label, isToday } = dayLabel(firstStart);
-      html += `<div class="day-section">
-        <div class="day-label ${isToday ? 'today' : ''}"><span>${label}</span></div>`;
-
-      evts.forEach(m => {
-        const start = m.start || m.startTime;
-        const end   = m.end   || m.endTime;
-        const past = !isToday && isPast(end || start);
-        const live = isNow(start, end || start);
-        const cardCls = live ? 'now' : (past ? 'past' : '');
-        const timeCls = live ? 'now' : (past ? 'past' : '');
-        const timeStr = start ? fmt(start) : (m.allDay ? 'All Day' : '—');
-        const duration = fmtDuration(start, end);
-        const title = m.summary || m.title || '(No title)';
-        const location = m.location || m.where || m.meetUrl || '';
-        const kartelPeople = (m.kartelAttendees || []);
-        const clientPeople = (m.clientAttendees || []);
-        const allPeople = [...kartelPeople, ...clientPeople].slice(0, 8);
-        const link = m.link || m.htmlLink || m.meetUrl || '';
-
-        html += `<div class="meeting-card ${cardCls}">
-          <div class="meeting-top">
-            <div class="meeting-time-block">
-              <div class="meeting-time ${timeCls}">${timeStr}${live ? '' : ''}</div>
-              ${duration ? `<div class="meeting-duration">${duration}</div>` : ''}
-            </div>
-            <div style="flex:1">
-              <div class="meeting-title">${title}${live ? '<span class="now-badge">NOW</span>' : ''}</div>
-              ${location ? `<div class="meeting-where">📍 ${location.replace(/^https?:\/\/meet\.google\.com\//, 'meet.google.com/')}</div>` : ''}
-            </div>
-          </div>
-          ${allPeople.length ? `<div class="meeting-people">
-            ${kartelPeople.map(p => `<span class="person-pill kartel">${p}</span>`).join('')}
-            ${clientPeople.map(p => `<span class="person-pill client">${p}</span>`).join('')}
-          </div>` : ''}
-          ${link ? `<a class="link-btn" href="${link}" target="_blank">↗ Open in Google Calendar</a>` : ''}
-        </div>`;
-      });
-
-      html += '</div>';
-    });
-
-    content.innerHTML = html || '<div class="empty-day">No events to display.</div>';
+    renderCalendar();
   } catch(e) {
-    content.innerHTML = `<div class="error-msg">⚠ Failed to load calendar: ${e.message}<br><br>Make sure Google Calendar is connected and production@kartel.ai (or wayan@/veronica@kartel.ai) is accessible.</div>`;
+    document.getElementById('cal-container').innerHTML =
+      `<div class="error-msg">⚠ Failed to load milestones: ${e.message}</div>`;
   }
 }
 
+// Init
+const _t = todayLocal();
+viewYear  = _t.getFullYear();
+viewMonth = _t.getMonth();
+
 loadCalendar();
-setInterval(loadCalendar, 5 * 60 * 1000);
+setInterval(() => loadCalendar(false), 2 * 60 * 1000);
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 </script>
 </body>
 </html>
