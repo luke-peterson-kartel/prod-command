@@ -13,8 +13,9 @@
     --border: rgba(0,255,136,0.15); --at-risk: #f59e0b; --overdue: #ef4444;
     --complete: #00c97a; --col-purple: #818cf8;
   }
+  html { height: 100%; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 12px; }
+  body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; font-size: 12px; display: flex; flex-direction: column; }
 
   /* ─── TOP NAV ── */
   .top-nav { background: var(--bg2); border-bottom: 1px solid rgba(129,140,248,0.15); display: flex; align-items: center; padding: 0 20px; gap: 2px; position: sticky; top: 0; z-index: 101; height: 36px; }
@@ -49,10 +50,10 @@
   .filter-pill.active { color: var(--accent2); background: rgba(0,212,255,.1); border-color: rgba(0,212,255,.35); }
 
   /* ─── CAPACITY BOARD ── */
-  .capacity-board { display: flex; gap: 0; overflow-x: auto; min-height: calc(100vh - 160px); }
+  .capacity-board { display: flex; gap: 0; overflow-x: auto; flex: 1; min-height: 0; }
   .cap-col { display: flex; flex-direction: column; min-width: 280px; flex: 1; border-right: 1px solid rgba(255,255,255,.04); }
   .cap-col:last-child { border-right: none; }
-  .cap-col-header { padding: 12px 16px 10px; border-bottom: 1px solid rgba(255,255,255,.05); position: sticky; top: 36px; z-index: 10; background: var(--bg2); display: flex; align-items: center; justify-content: space-between; }
+  .cap-col-header { padding: 12px 16px 10px; border-bottom: 1px solid rgba(255,255,255,.05); flex-shrink: 0; background: var(--bg2); display: flex; align-items: center; justify-content: space-between; }
   .cap-col-header.available  { border-top: 2px solid var(--accent);  background: rgba(0,255,136,.03); }
   .cap-col-header.active-col { border-top: 2px solid var(--accent2); background: rgba(0,212,255,.03); }
   .cap-col-header.almost     { border-top: 2px solid var(--at-risk); background: rgba(245,158,11,.03); }
@@ -67,7 +68,7 @@
   .cap-col-count.active-col { color: var(--accent2); background: rgba(0,212,255,.1); }
   .cap-col-count.almost     { color: var(--at-risk); background: rgba(245,158,11,.1); }
   .cap-col-count.full-cap   { color: var(--overdue); background: rgba(239,68,68,.1); }
-  .cap-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .cap-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; min-height: 0; }
 
   /* ─── ARTIST CARD ── */
   .artist-card { background: var(--card); border: 1px solid rgba(255,255,255,.06); border-radius: 6px; padding: 10px 12px; cursor: default; transition: all .15s; }
