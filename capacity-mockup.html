@@ -54,10 +54,11 @@
   .cap-col { display: flex; flex-direction: column; min-width: 280px; flex: 1; border-right: 1px solid rgba(255,255,255,.04); }
   .cap-col:last-child { border-right: none; }
   .cap-col-header { padding: 12px 16px 10px; border-bottom: 1px solid rgba(255,255,255,.05); flex-shrink: 0; background: var(--bg2); display: flex; align-items: center; justify-content: space-between; }
-  .cap-col-header.available  { border-top: 2px solid var(--accent);  background: rgba(0,255,136,.03); }
-  .cap-col-header.active-col { border-top: 2px solid var(--accent2); background: rgba(0,212,255,.03); }
-  .cap-col-header.almost     { border-top: 2px solid var(--at-risk); background: rgba(245,158,11,.03); }
-  .cap-col-header.full-cap   { border-top: 2px solid var(--overdue); background: rgba(239,68,68,.03); }
+  .cap-col-header.available  { border-top: 2px solid var(--accent);    background: rgba(0,255,136,.03); }
+  .cap-col-header.active-col { border-top: 2px solid var(--accent2);   background: rgba(0,212,255,.03); }
+  .cap-col-header.almost     { border-top: 2px solid var(--at-risk);   background: rgba(245,158,11,.03); }
+  .cap-col-header.full-cap   { border-top: 2px solid var(--overdue);   background: rgba(239,68,68,.03); }
+  .cap-col-header.ooo-col    { border-top: 2px solid #818cf8;          background: rgba(129,140,248,.03); }
   .cap-col-title { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
   .cap-col-title.available { color: var(--accent); }
   .cap-col-title.active-col { color: var(--accent2); }
@@ -68,6 +69,8 @@
   .cap-col-count.active-col { color: var(--accent2); background: rgba(0,212,255,.1); }
   .cap-col-count.almost     { color: var(--at-risk); background: rgba(245,158,11,.1); }
   .cap-col-count.full-cap   { color: var(--overdue); background: rgba(239,68,68,.1); }
+  .cap-col-title.ooo-col    { color: #818cf8; }
+  .cap-col-count.ooo-col    { color: #818cf8; background: rgba(129,140,248,.1); }
   .cap-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; min-height: 0; }
 
   /* ─── ARTIST CARD ── */
@@ -144,25 +147,24 @@ let allArtists = [];
 let activeFilter = 'all';
 
 function cardClass(status) {
-  if (!status) return 'available';
-  const s = status.toLowerCase();
-  if (s.includes('capacity') || s.includes('full')) return 'full-cap';
-  if (s.includes('almost') || s.includes('nearly')) return 'almost';
-  if (s.includes('active') || s.includes('working') || (parseInt(s) > 0)) return 'active-card';
+  if (status === 'At Capacity') return 'full-cap';
+  if (status === 'Almost Full') return 'almost';
+  if (status === 'Active')      return 'active-card';
+  if (status === 'OOO')         return 'full-cap';
   return 'available';
 }
 function fillClass(status) {
   const c = cardClass(status);
   if (c === 'full-cap') return 'full';
-  if (c === 'almost') return 'almost';
+  if (c === 'almost')   return 'almost';
   if (c === 'active-card') return 'active-fill';
   return 'available';
 }
 function colClass(key) {
-  return { available: 'available', active: 'active-col', almost: 'almost', full: 'full-cap' }[key] || 'available';
+  return { available: 'available', active: 'active-col', almost: 'almost', full: 'full-cap', ooo: 'ooo-col' }[key] || 'available';
 }
 function colLabel(key) {
-  return { available: '✅ Available', active: '🔵 Active', almost: '⚠️ Almost Full', full: '🔴 At Capacity' }[key] || key;
+  return { available: '✅ Available', active: '🔵 Active', almost: '⚠️ Almost Full', full: '🔴 At Capacity', ooo: '✈️ OOO' }[key] || key;
 }
 
 function buildCard(artist) {
@@ -194,10 +196,11 @@ function buildCard(artist) {
 }
 
 function getCol(artist) {
-  const s = (artist.status || '').toLowerCase();
-  if (s.includes('capacity') || s.includes('full')) return 'full';
-  if (s.includes('almost') || s.includes('nearly')) return 'almost';
-  if (artist.count > 0) return 'active';
+  const s = artist.status || '';
+  if (s === 'At Capacity') return 'full';
+  if (s === 'Almost Full') return 'almost';
+  if (s === 'Active')      return 'active';
+  if (s === 'OOO')         return 'ooo';
   return 'available';
 }
 
@@ -236,7 +239,7 @@ async function loadArtists() {
     allArtists = data.artists || [];
 
     // Stats
-    const cols = { available: [], active: [], almost: [], full: [] };
+    const cols = { available: [], active: [], almost: [], full: [], ooo: [] };
     allArtists.forEach(a => cols[getCol(a)].push(a));
 
     document.getElementById('brand-sub').textContent = `${allArtists.length} artists · live from AirTable`;
@@ -254,6 +257,8 @@ async function loadArtists() {
       <div class="strip-sep">·</div>
       <div class="strip-stat"><div class="strip-dot" style="background:var(--overdue)"></div><span class="strip-label">At Capacity</span><span class="strip-val" style="color:var(--overdue)">${cols.full.length}</span></div>
       <div class="strip-sep">·</div>
+      <div class="strip-stat"><div class="strip-dot" style="background:#818cf8"></div><span class="strip-label">OOO</span><span class="strip-val" style="color:#818cf8">${cols.ooo.length}</span></div>
+      <div class="strip-sep">·</div>
       <span class="strip-label">Last sync: ${new Date().toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'})}</span>`;
 
     // Build role filter pills
@@ -264,7 +269,7 @@ async function loadArtists() {
       ${roles.map(r => `<button class="filter-pill ${activeFilter===r?'active':''}" onclick="setFilter('${r.replace(/'/g,"\\'")}',this)">${r}</button>`).join('')}`;
 
     // Build columns
-    const colOrder = ['available','active','almost','full'];
+    const colOrder = ['available','active','almost','full','ooo'];
     board.innerHTML = colOrder.map(key => {
       const artists = cols[key];
       const cls = colClass(key);
