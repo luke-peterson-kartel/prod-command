@@ -624,17 +624,7 @@
   .legend-dot.amber { background: var(--at-risk); }
   .legend-dot.red { background: var(--overdue); }
 
-  /* ── CAT BOMB ── */
-  .cat-bomb-btn {
-    background: none; border: none;
-    color: var(--text3); opacity: 0.35;
-    padding: 4px 6px; cursor: pointer;
-    display: flex; align-items: center;
-    transition: opacity 0.2s, transform 0.15s;
-    border-radius: 4px;
-  }
-  .cat-bomb-btn:hover { opacity: 0.7; transform: scale(1.15); }
-  .cat-bomb-btn:active { transform: scale(0.95); }
+  /* ── CAT BOMB ── (inherits .header-action-btn styles) */
   .cat-modal-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.75); z-index: 2000;
@@ -703,15 +693,24 @@
   @keyframes pig-tail-curl { 0%{transform:rotate(-15deg)} 100%{transform:rotate(10deg)} }
   @keyframes pig-ear-wiggle { 0%{transform:rotate(-6deg)} 100%{transform:rotate(6deg)} }
 
-  /* ─── NUZZLE BUTTON ── */
-  .nuzzle-btn {
-    background: none; border: 1px solid rgba(255,107,189,0.3); border-radius: 4px;
-    color: #ff6bbd; cursor: pointer; padding: 5px 8px; font-size: 11px;
-    font-family: inherit; transition: all 0.15s; line-height: 1;
-    white-space: nowrap;
+  /* ─── HEADER ACTION BUTTONS (right side of header) ─── */
+  .header-actions {
+    display: flex; flex-direction: column; gap: 4px;
+    align-items: stretch; min-width: 100px;
   }
-  .nuzzle-btn:hover { background: rgba(255,107,189,0.1); border-color: rgba(255,107,189,0.6); }
-  .nuzzle-btn:active { transform: scale(0.95); }
+  .header-action-btn {
+    background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 3px; color: var(--accent2); cursor: pointer;
+    padding: 4px 10px; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    font-family: inherit; transition: all 0.15s; line-height: 1.2;
+    white-space: nowrap; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .header-action-btn:hover { background: rgba(0,212,255,0.14); border-color: rgba(0,212,255,0.5); }
+  .header-action-btn:active { transform: scale(0.95); }
+  .header-action-btn:disabled { opacity: 0.35; cursor: default; }
+  /* keep nuzzle-btn / cat-bomb-btn as selector aliases for JS references */
+  .nuzzle-btn { /* inherits header-action-btn */ }
 
   /* ─── STAGE MOVE CELEBRATION ── */
   @keyframes stage-pulse {
@@ -858,16 +857,6 @@
   <a class="nav-btn" href="/overview-mockup.html" title="Project Overview">🗂 OVERVIEW</a>
   <a class="nav-btn" href="/capacity-mockup.html" title="Artist Tracking">👥 ARTISTS</a>
   <a class="nav-btn" href="/calendar.html" title="Calendar">📅 CALENDAR</a>
-  <div style="flex:1"></div>
-  <div class="nav-divider"></div>
-  <button class="nuzzle-btn" onclick="forceNuzzle()" title="Force Nuzzle" style="font-size:12px;padding:4px 10px;margin:0 6px;border-radius:3px;height:26px">🐷💕🐱</button>
-  <div class="nav-divider"></div>
-  <button class="cat-bomb-btn" onclick="catBomb()" title="Cat Bomb" style="margin:0 4px;padding:3px 7px">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-3 6c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm6 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-3 8.5c-2 0-3.7-1-4.5-2.5h9c-.8 1.5-2.5 2.5-4.5 2.5z"/>
-      <path d="M3 5L5 9M21 5L19 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>
-  </button>
 </div>
 
 <!-- ── HEADER ── -->
@@ -914,6 +903,17 @@
   <div class="clock-block">
     <div class="clock glow-cyan" id="clock">--:--:--</div>
     <div class="clock-date" id="clock-date">--- --- --</div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="header-actions">
+    <button class="header-action-btn nuzzle-btn" onclick="forceNuzzle()" title="Force Nuzzle">🐷💕🐱 NUZZLE</button>
+    <button class="header-action-btn cat-bomb-btn" onclick="catBomb()" title="Cat Bomb" style="gap:5px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-3 6c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm6 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-3 8.5c-2 0-3.7-1-4.5-2.5h9c-.8 1.5-2.5 2.5-4.5 2.5z"/>
+        <path d="M3 5L5 9M21 5L19 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      CAT BOMB
+    </button>
   </div>
 </div>
 
