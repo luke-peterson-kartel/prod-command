@@ -27,13 +27,15 @@
     --col-purple-dim: rgba(129,140,248,0.1);
     --col-w: 0px; /* deprecated — columns now flex */
   }
-  html { height: 100%; }
+  html { height: 100%; overflow: hidden; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'JetBrains Mono', monospace;
     background: var(--bg);
     color: var(--text);
-    height: 100vh;
+    zoom: 0.8;
+    width: 125vw;
+    height: 125vh;
     overflow: hidden;
     font-size: 12px;
     display: flex;
