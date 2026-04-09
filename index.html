@@ -203,7 +203,7 @@
     flex: 1; overflow-y: auto;
     background: rgba(0,0,0,0.2); border: 1px solid rgba(0,255,136,0.07);
     border-top: none; border-radius: 0 0 4px 4px;
-    padding: 5px; display: flex; flex-direction: column; gap: 5px;
+    padding: 8px; display: flex; flex-direction: column; gap: 8px;
   }
   .col-cards::-webkit-scrollbar { width: 3px; }
   .col-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -213,7 +213,7 @@
   .card {
     background: var(--card); border-radius: 5px;
     border: 1px solid rgba(0,255,136,0.1); border-left: 3px solid var(--on-track);
-    padding: 7px 8px; cursor: pointer;
+    padding: 9px 10px; cursor: pointer;
     transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
     position: relative;
   }
@@ -235,8 +235,8 @@
   }
   .card:hover .card-click-hint { opacity: 1; }
 
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 2px; }
-  .card-name { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1.3; flex: 1; padding-right: 24px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+  .card-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; flex: 1; padding-right: 24px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .sla-badge {
     font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
     padding: 2px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
@@ -248,20 +248,20 @@
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
 
-  .card-job { font-size: 9px; color: var(--text3); margin-bottom: 1px; }
-  .card-client { font-size: 9px; color: var(--accent2); margin-bottom: 3px; opacity: 0.8; }
+  .card-job { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+  .card-client { font-size: 10px; color: var(--accent2); margin-bottom: 5px; opacity: 0.8; }
 
   /* Producer row on card — compact */
   .card-producer {
-    display: flex; align-items: center; gap: 5px; margin-bottom: 3px;
+    display: flex; align-items: center; gap: 5px; margin-bottom: 5px;
   }
   .producer-label { font-size: 9px; color: var(--text3); letter-spacing: 0.08em; }
   .avatar-circle {
-    width: 16px; height: 16px; border-radius: 50%;
+    width: 18px; height: 18px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 7px; font-weight: 800; flex-shrink: 0;
   }
-  .avatar-name { font-size: 9px; color: var(--text2); }
+  .avatar-name { font-size: 10px; color: var(--text2); }
 
   /* Artist count pill */
   .artist-pill {
@@ -275,13 +275,12 @@
   .artist-pill-icon { font-size: 10px; }
 
   .card-status {
-    font-size: 9px; color: var(--text2); line-height: 1.35; margin-bottom: 3px;
+    font-size: 10px; color: var(--text2); line-height: 1.4; margin-bottom: 5px;
     border-left: 2px solid rgba(255,255,255,0.06); padding-left: 6px;
-    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
-  .card-next { background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.1); border-radius: 3px; padding: 3px 5px; }
-  .card-next-label { font-size: 8px; color: var(--accent); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 1px; }
-  .card-next-text { font-size: 8px; color: var(--text2); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .card-next { background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.1); border-radius: 3px; padding: 4px 6px; }
+  .card-next-label { font-size: 9px; color: var(--accent); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 2px; }
+  .card-next-text { font-size: 9px; color: var(--text2); line-height: 1.4; }
   .card.at-risk .card-next { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.15); }
   .card.at-risk .card-next-label { color: var(--at-risk); }
   .card.overdue .card-next { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2); }
