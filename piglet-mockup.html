@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Piglet Mockup — Prod Command</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0e1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+  }
+  h1 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #00d4ff;
+    text-shadow: 0 0 12px rgba(0,212,255,0.6);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .sub {
+    font-size: 11px;
+    color: #4a6a8a;
+    margin-bottom: 48px;
+    letter-spacing: 0.05em;
+  }
+  .stage {
+    position: relative;
+    width: 560px;
+    height: 120px;
+    background: #0d1320;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+  /* Ground line */
+  .stage::after {
+    content: '';
+    position: absolute;
+    bottom: 28px;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), rgba(255,107,180,0.15), transparent);
+  }
+  .label-row {
+    display: flex;
+    gap: 60px;
+    margin-top: 24px;
+    justify-content: center;
+  }
+  .label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .label.cat  { color: #00d4ff; text-shadow: 0 0 8px rgba(0,212,255,0.5); }
+  .label.pig  { color: #ff6bbd; text-shadow: 0 0 8px rgba(255,107,189,0.5); }
+
+  /* ── CAT (existing) ── */
+  .dash-cat {
+    position: absolute;
+    width: 42px;
+    height: 33px;
+    bottom: 28px;
+  }
+  .dash-cat .leg-a { display: block; }
+  .dash-cat .leg-b { display: none; }
+  .dash-cat.walk-frame .leg-a { display: none; }
+  .dash-cat.walk-frame .leg-b { display: block; }
+  .dash-cat .cat-tail {
+    animation: tail-wag 0.5s ease-in-out infinite alternate;
+    transform-origin: 5px 12px;
+  }
+  @keyframes tail-wag { 0%{transform:rotate(-12deg)} 100%{transform:rotate(12deg)} }
+
+  /* ── PIGLET (new) ── */
+  .dash-pig {
+    position: absolute;
+    width: 42px;
+    height: 33px;
+    bottom: 28px;
+  }
+  .dash-pig .leg-a { display: block; }
+  .dash-pig .leg-b { display: none; }
+  .dash-pig.walk-frame .leg-a { display: none; }
+  .dash-pig.walk-frame .leg-b { display: block; }
+  .dash-pig .pig-tail {
+    animation: pig-tail-curl 0.6s ease-in-out infinite alternate;
+    transform-origin: 4px 12px;
+  }
+  .dash-pig .pig-ear-l { animation: pig-ear-wiggle 1.2s ease-in-out infinite alternate; transform-origin: 8px 6px; }
+  .dash-pig .pig-ear-r { animation: pig-ear-wiggle 1.2s ease-in-out infinite alternate 0.3s; transform-origin: 20px 6px; }
+  @keyframes pig-tail-curl { 0%{transform:rotate(-15deg)} 100%{transform:rotate(10deg)} }
+  @keyframes pig-ear-wiggle { 0%{transform:rotate(-6deg)} 100%{transform:rotate(6deg)} }
+
+  /* Glow filter defs done in SVG */
+</style>
+</head>
+<body>
+
+<h1>🟢 Prod Command — New Character Mockup</h1>
+<p class="sub">Glowy pixel style · Same size · Pink instead of blue</p>
+
+<div class="stage" id="stage">
+  <!-- Cat (existing, static preview) -->
+  <div class="dash-cat" id="preview-cat" style="left: 130px;">
+    <svg viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow-blue">
+          <feGaussianBlur stdDeviation="0.8" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g filter="url(#glow-blue)">
+        <!-- tail -->
+        <path class="cat-tail" d="M3,12 Q-1,6 2,4 Q4,2 5,5" stroke="#00d4ff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- body -->
+        <ellipse cx="14" cy="13" rx="8" ry="4.5" fill="#1a2a3a"/>
+        <ellipse cx="14" cy="13" rx="8" ry="4.5" stroke="#00d4ff" stroke-width="0.5" fill="none" opacity="0.6"/>
+        <!-- head -->
+        <circle cx="21" cy="9" r="4.5" fill="#1a2a3a"/>
+        <circle cx="21" cy="9" r="4.5" stroke="#00d4ff" stroke-width="0.5" fill="none" opacity="0.6"/>
+        <!-- ears -->
+        <polygon points="17.5,5.5 19,1 20.5,5" fill="#1a2a3a" stroke="#00d4ff" stroke-width="0.5" opacity="0.8"/>
+        <polygon points="22,5 23.5,1 25,5.5" fill="#1a2a3a" stroke="#00d4ff" stroke-width="0.5" opacity="0.8"/>
+        <polygon points="18.2,5.2 19,2.5 19.8,5" fill="#00d4ff" opacity="0.15"/>
+        <polygon points="22.5,4.8 23.5,2.5 24.3,5.2" fill="#00d4ff" opacity="0.15"/>
+        <!-- eyes -->
+        <ellipse cx="19.5" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
+        <ellipse cx="19.5" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
+        <ellipse cx="23" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
+        <ellipse cx="23" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
+        <!-- nose -->
+        <polygon points="20.8,10.2 21.5,10.2 21.15,10.8" fill="#ff6b9d"/>
+        <!-- legs -->
+        <g class="leg-a">
+          <line x1="10" y1="16.5" x2="9" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="13" y1="17" x2="14" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="16" y1="17" x2="15" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="19" y1="16.5" x2="20" y2="20" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+        </g>
+        <g class="leg-b">
+          <line x1="10" y1="16.5" x2="7" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="13" y1="17" x2="15.5" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="16" y1="17" x2="13.5" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="19" y1="16.5" x2="22" y2="19.5" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Piglet (new) -->
+  <div class="dash-pig" id="preview-pig" style="left: 330px;">
+    <svg viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow-pink">
+          <feGaussianBlur stdDeviation="0.8" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g filter="url(#glow-pink)">
+        <!-- curly tail (corkscrew) -->
+        <path class="pig-tail" d="M3,11 Q-1,9 0,6 Q1,3 3,5 Q4,7 2,8" stroke="#ff6bbd" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- body -->
+        <ellipse cx="14" cy="13" rx="8" ry="4.5" fill="#2a1020"/>
+        <ellipse cx="14" cy="13" rx="8" ry="4.5" stroke="#ff6bbd" stroke-width="0.5" fill="none" opacity="0.7"/>
+        <!-- head — round like a piglet -->
+        <circle cx="21" cy="9.5" r="4.8" fill="#2a1020"/>
+        <circle cx="21" cy="9.5" r="4.8" stroke="#ff6bbd" stroke-width="0.5" fill="none" opacity="0.7"/>
+        <!-- round floppy ears -->
+        <ellipse class="pig-ear-l" cx="18" cy="5.5" rx="2.2" ry="2.8" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.85" transform="rotate(-15 18 5.5)"/>
+        <ellipse class="pig-ear-l" cx="18" cy="5.5" rx="1.2" ry="1.6" fill="#ff6bbd" opacity="0.12" transform="rotate(-15 18 5.5)"/>
+        <ellipse class="pig-ear-r" cx="24" cy="5.5" rx="2.2" ry="2.8" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.85" transform="rotate(15 24 5.5)"/>
+        <ellipse class="pig-ear-r" cx="24" cy="5.5" rx="1.2" ry="1.6" fill="#ff6bbd" opacity="0.12" transform="rotate(15 24 5.5)"/>
+        <!-- eyes -->
+        <ellipse cx="19.5" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
+        <ellipse cx="19.5" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
+        <ellipse cx="23" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
+        <ellipse cx="23" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
+        <!-- snout (the key piglet detail!) -->
+        <ellipse cx="21.2" cy="11.5" rx="2.3" ry="1.6" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.9"/>
+        <!-- nostrils -->
+        <ellipse cx="20.3" cy="11.6" rx="0.5" ry="0.4" fill="#ff6bbd" opacity="0.5"/>
+        <ellipse cx="22.1" cy="11.6" rx="0.5" ry="0.4" fill="#ff6bbd" opacity="0.5"/>
+        <!-- legs: walk frame A -->
+        <g class="leg-a">
+          <line x1="10" y1="16.5" x2="9" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="13" y1="17" x2="14" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="16" y1="17" x2="15" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="19" y1="16.5" x2="20" y2="20" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <!-- tiny hooves -->
+          <ellipse cx="9" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+          <ellipse cx="14" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+          <ellipse cx="15" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+          <ellipse cx="20" cy="20.3" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        </g>
+        <!-- legs: walk frame B -->
+        <g class="leg-b">
+          <line x1="10" y1="16.5" x2="7" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="13" y1="17" x2="15.5" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="16" y1="17" x2="13.5" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="19" y1="16.5" x2="22" y2="19.5" stroke="#ff6bbd" stroke-width="1.2" stroke-linecap="round"/>
+          <ellipse cx="7" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+          <ellipse cx="15.5" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+          <ellipse cx="13.5" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+          <ellipse cx="22" cy="19.8" rx="1.1" ry="0.5" fill="#ff6bbd" opacity="0.6"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<div class="label-row">
+  <span class="label cat">🐱 Cat (existing)</span>
+  <span class="label pig">🐷 Piglet (new)</span>
+</div>
+
+<script>
+  // Animate both to walk so you can see them in motion
+  let frame = false;
+  setInterval(() => {
+    frame = !frame;
+    document.getElementById('preview-cat').classList.toggle('walk-frame', frame);
+    document.getElementById('preview-pig').classList.toggle('walk-frame', frame);
+  }, 150);
+</script>
+</body>
+</html>

@@ -904,8 +904,16 @@ const server = http.createServer(async (req, res) => {
   let filePath = path.join(__dirname, url.pathname === '/' ? 'index.html' : url.pathname).split('?')[0];
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
-    const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' }[path.extname(filePath)] || 'text/plain';
-    res.writeHead(200, { 'Content-Type': mime });
+    const ext = path.extname(filePath);
+    const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' }[ext] || 'text/plain';
+    const headers = { 'Content-Type': mime };
+    // Never cache HTML — always serve fresh
+    if (ext === '.html' || ext === '') {
+      headers['Cache-Control'] = 'no-store, no-cache, must-revalidate';
+      headers['Pragma'] = 'no-cache';
+      headers['Expires'] = '0';
+    }
+    res.writeHead(200, headers);
     res.end(data);
   });
 });
