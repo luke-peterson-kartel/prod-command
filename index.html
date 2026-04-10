@@ -856,6 +856,13 @@
   .dash-cat.sleeping .leg-a, .dash-cat.sleeping .leg-b { display: none !important; }
   .dash-cat.sleeping .leg-sit { display: block !important; }
   .dash-pig.sleeping .leg-a,  .dash-pig.sleeping .leg-b  { display: none !important; }
+  /* Eyes: open by default, closed when sleeping */
+  .cat-eyes-closed { display: none; }
+  .pig-eyes-closed { display: none; }
+  .dash-cat.sleeping .cat-eyes-open { display: none; }
+  .dash-cat.sleeping .cat-eyes-closed { display: block; }
+  .dash-pig.sleeping .pig-eyes-open { display: none; }
+  .dash-pig.sleeping .pig-eyes-closed { display: block; }
   .dash-cat.stretching, .dash-pig.stretching {
     animation: wake-stretch 1.3s ease-out forwards !important;
   }
@@ -2065,9 +2072,21 @@ function enterSleepMode() {
   if (window._catState) window._catState.nuzzling = true;
   if (window._pigState) window._pigState.nuzzling = true;
 
-  // Lie down
-  if (catEl) { catEl.classList.remove('flip', 'sitting', 'walk-frame'); catEl.classList.add('sleeping'); }
-  if (pigEl) { pigEl.classList.remove('flip', 'walk-frame');            pigEl.classList.add('sleeping'); }
+  // Snap into view and lie down
+  if (catEl) {
+    catEl.classList.remove('flip', 'sitting', 'walk-frame');
+    catEl.classList.add('sleeping');
+    const cx = parseFloat(catEl.style.left) || 0;
+    if (cx < 20 || cx > window.innerWidth - 60) catEl.style.left = (window.innerWidth * 0.25) + 'px';
+    if (!catEl.style.top || parseFloat(catEl.style.top) < 0) catEl.style.top = '20px';
+  }
+  if (pigEl) {
+    pigEl.classList.remove('flip', 'walk-frame');
+    pigEl.classList.add('sleeping');
+    const px = parseFloat(pigEl.style.left) || 0;
+    if (px < 20 || px > window.innerWidth - 60) pigEl.style.left = (window.innerWidth * 0.65) + 'px';
+    if (!pigEl.style.top || parseFloat(pigEl.style.top) < 0) pigEl.style.top = '20px';
+  }
 
   if (nuzzleBtn) { nuzzleBtn.disabled = true; nuzzleBtn.title = 'Sleeping 💤 (wakes at 9:30am)'; nuzzleBtn.style.opacity = '0.35'; }
 
@@ -2117,9 +2136,6 @@ function updateSleepMode() {
   if (shouldSleep && !isSleeping)  enterSleepMode();
   else if (!shouldSleep && isSleeping) exitSleepMode();
 }
-updateSleepMode();
-setInterval(updateSleepMode, 30_000);
-
 // Boot live sync
 fetchLiveData();
 fetchMeetings();
@@ -2159,10 +2175,16 @@ function switchTab(tab) {
     <polygon points="18.2,5.2 19,2.5 19.8,5" fill="#00d4ff" opacity="0.15"/>
     <polygon points="22.5,4.8 23.5,2.5 24.3,5.2" fill="#00d4ff" opacity="0.15"/>
     <!-- eyes -->
-    <ellipse cx="19.5" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
-    <ellipse cx="19.5" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
-    <ellipse cx="23" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
-    <ellipse cx="23" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
+    <g class="cat-eyes-open">
+      <ellipse cx="19.5" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
+      <ellipse cx="19.5" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
+      <ellipse cx="23" cy="8.5" rx="1" ry="1.3" fill="#00ff88"/>
+      <ellipse cx="23" cy="8.8" rx="0.5" ry="0.7" fill="#000"/>
+    </g>
+    <g class="cat-eyes-closed">
+      <path d="M18.6,8.5 Q19.5,7.8 20.4,8.5" stroke="#00d4ff" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+      <path d="M22.1,8.5 Q23,7.8 23.9,8.5" stroke="#00d4ff" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+    </g>
     <!-- nose -->
     <polygon points="20.8,10.2 21.5,10.2 21.15,10.8" fill="#ff6b9d"/>
     <!-- walk frame A: legs down -->
@@ -2288,7 +2310,8 @@ function switchTab(tab) {
 
   // Walk frame animation
   setInterval(() => {
-    if (state !== 'sitting') cat.classList.toggle('walk-frame');
+    if (state !== 'sitting' && !catNuzzling) cat.classList.toggle('walk-frame');
+    else if (catNuzzling) cat.classList.remove('walk-frame');
   }, 150);
 
   // Start from an edge
@@ -2337,10 +2360,16 @@ function switchTab(tab) {
       <ellipse class="pig-ear-l" cx="18" cy="5.5" rx="1.2" ry="1.6" fill="#ff6bbd" opacity="0.12" transform="rotate(-15 18 5.5)"/>
       <ellipse class="pig-ear-r" cx="24" cy="5.5" rx="2.2" ry="2.8" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.85" transform="rotate(15 24 5.5)"/>
       <ellipse class="pig-ear-r" cx="24" cy="5.5" rx="1.2" ry="1.6" fill="#ff6bbd" opacity="0.12" transform="rotate(15 24 5.5)"/>
-      <ellipse cx="19.5" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
-      <ellipse cx="19.5" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
-      <ellipse cx="23" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
-      <ellipse cx="23" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
+      <g class="pig-eyes-open">
+        <ellipse cx="19.5" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
+        <ellipse cx="19.5" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
+        <ellipse cx="23" cy="9" rx="1" ry="1.1" fill="#ff8fd4"/>
+        <ellipse cx="23" cy="9.2" rx="0.5" ry="0.6" fill="#000"/>
+      </g>
+      <g class="pig-eyes-closed">
+        <path d="M18.6,9 Q19.5,8.3 20.4,9" stroke="#ff6bbd" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+        <path d="M22.1,9 Q23,8.3 23.9,9" stroke="#ff6bbd" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+      </g>
       <ellipse cx="21.2" cy="11.5" rx="2.3" ry="1.6" fill="#2a1020" stroke="#ff6bbd" stroke-width="0.5" opacity="0.9"/>
       <ellipse cx="20.3" cy="11.6" rx="0.5" ry="0.4" fill="#ff6bbd" opacity="0.5"/>
       <ellipse cx="22.1" cy="11.6" rx="0.5" ry="0.4" fill="#ff6bbd" opacity="0.5"/>
@@ -2417,7 +2446,7 @@ function switchTab(tab) {
     pig.style.top = py + 'px';
   }
 
-  setInterval(() => { if (!pNuzzling) pig.classList.toggle('walk-frame'); }, 150);
+  setInterval(() => { if (!pNuzzling) pig.classList.toggle('walk-frame'); else pig.classList.remove('walk-frame'); }, 150);
 
   pigEnterFromEdge();
   let pLastTime = performance.now();
@@ -2441,6 +2470,10 @@ function switchTab(tab) {
     spawnMudPuddle(pig, window._pigState);
   });
 })();
+
+// ── SLEEP MODE INIT (deferred until after cat + pig are ready) ──
+setTimeout(updateSleepMode, 0);
+setInterval(updateSleepMode, 30_000);
 
 // ── CAT CLICK: BUTTERFLY ──
 function spawnButterfly(catEl, catSt) {
