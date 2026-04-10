@@ -2072,21 +2072,41 @@ function enterSleepMode() {
   if (window._catState) window._catState.nuzzling = true;
   if (window._pigState) window._pigState.nuzzling = true;
 
-  // Snap into view and lie down
-  if (catEl) {
-    catEl.classList.remove('flip', 'sitting', 'walk-frame');
-    catEl.classList.add('sleeping');
-    const cx = parseFloat(catEl.style.left) || 0;
-    if (cx < 20 || cx > window.innerWidth - 60) catEl.style.left = (window.innerWidth * 0.25) + 'px';
-    if (!catEl.style.top || parseFloat(catEl.style.top) < 0) catEl.style.top = '20px';
-  }
-  if (pigEl) {
-    pigEl.classList.remove('flip', 'walk-frame');
-    pigEl.classList.add('sleeping');
-    const px = parseFloat(pigEl.style.left) || 0;
-    if (px < 20 || px > window.innerWidth - 60) pigEl.style.left = (window.innerWidth * 0.65) + 'px';
-    if (!pigEl.style.top || parseFloat(pigEl.style.top) < 0) pigEl.style.top = '20px';
-  }
+  // Snap to top-right corner — underneath the handoffs bar, above Final Delivery column
+  // Measure reference elements at runtime so it works at any zoom/resolution
+  (function snapToSleepPositions() {
+    const infoStrip  = document.querySelector('.info-strip');
+    const finalCol   = document.querySelectorAll('.col');
+    const lastCol    = finalCol[finalCol.length - 1];
+    const zoom       = 0.8; // body zoom factor
+
+    // Default fallback positions (CSS px in zoomed body space)
+    let targetY  = 185;   // just below handoffs bar
+    let targetX1 = 1920;  // cat — left of the pair
+    let targetX2 = 1980;  // pig — right of the pair
+
+    if (infoStrip && lastCol) {
+      const stripBottom = infoStrip.getBoundingClientRect().bottom; // screen px
+      const colLeft     = lastCol.getBoundingClientRect().left;     // screen px
+      // Convert screen → body CSS coordinates
+      targetY  = Math.round(stripBottom / zoom) + 12;
+      targetX1 = Math.round(colLeft / zoom) + 28;
+      targetX2 = targetX1 + 52;
+    }
+
+    if (catEl) {
+      catEl.classList.remove('flip', 'sitting', 'walk-frame');
+      catEl.classList.add('sleeping');
+      catEl.style.left = targetX1 + 'px';
+      catEl.style.top  = targetY  + 'px';
+    }
+    if (pigEl) {
+      pigEl.classList.remove('flip', 'walk-frame');
+      pigEl.classList.add('sleeping');
+      pigEl.style.left = targetX2 + 'px';
+      pigEl.style.top  = targetY  + 'px';
+    }
+  })();
 
   if (nuzzleBtn) { nuzzleBtn.disabled = true; nuzzleBtn.title = 'Sleeping 💤 (wakes at 9:30am)'; nuzzleBtn.style.opacity = '0.35'; }
 
