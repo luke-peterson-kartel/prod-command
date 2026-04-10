@@ -831,19 +831,19 @@
 
   /* ─── SLEEP MODE ─── */
   @keyframes sleep-breathe {
-    0%, 100% { transform: rotate(90deg) scaleX(1);    }
-    50%       { transform: rotate(90deg) scaleX(0.87); }
+    0%, 100% { transform: scaleX(1)    scaleY(1);    }
+    50%       { transform: scaleX(1.06) scaleY(0.88); }
   }
   @keyframes sleep-breathe-pig {
-    0%, 100% { transform: rotate(90deg) scaleX(1);    }
-    50%       { transform: rotate(90deg) scaleX(0.87); }
+    0%, 100% { transform: scaleX(1)    scaleY(1);    }
+    50%       { transform: scaleX(1.06) scaleY(0.88); }
   }
   @keyframes wake-stretch {
-    0%   { transform: rotate(90deg) scaleX(0.87); }
-    35%  { transform: rotate(22deg) scaleX(1.18) scaleY(0.88); }
-    65%  { transform: rotate(-6deg) scaleX(0.94) scaleY(1.06); }
-    85%  { transform: rotate(3deg) scaleX(1.02); }
-    100% { transform: rotate(0deg) scaleX(1) scaleY(1); }
+    0%   { transform: scaleX(1.06) scaleY(0.88); }
+    35%  { transform: scaleX(0.88) scaleY(1.18); }
+    65%  { transform: scaleX(1.06) scaleY(0.94); }
+    85%  { transform: scaleX(0.98) scaleY(1.02); }
+    100% { transform: scaleX(1)    scaleY(1);    }
   }
   .dash-cat.sleeping {
     animation: sleep-breathe 3s ease-in-out infinite !important;
